@@ -1850,7 +1850,7 @@ const ChatInterface = () => {
         </div>
       </div>
     );
-  };
+  );
 
   // Main render logic
   if (currentPersonality === null) {
