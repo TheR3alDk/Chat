@@ -495,7 +495,12 @@ const ChatInterface = () => {
 
   const loadPublicPersonalities = async () => {
     try {
-      const response = await axios.get(`${API}/personalities/public`);
+      const params = new URLSearchParams();
+      if (discoverySearchTerm) params.append('search', discoverySearchTerm);
+      if (discoveryGenderFilter) params.append('gender', discoveryGenderFilter);
+      if (discoveryTagFilters.length > 0) params.append('tags', discoveryTagFilters.join(','));
+      
+      const response = await axios.get(`${API}/personalities/public?${params.toString()}`);
       setPublicPersonalities(response.data.personalities || []);
     } catch (err) {
       console.error('Failed to load public personalities:', err);
