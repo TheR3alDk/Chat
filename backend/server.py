@@ -117,6 +117,10 @@ def detect_image_request(text: str) -> Optional[str]:
     
     text_lower = text.lower()
     
+    # First check if it's a self-image request
+    if detect_self_image_request(text):
+        return text
+    
     # Check for explicit image request patterns
     for pattern in request_patterns:
         if re.search(pattern, text_lower):
@@ -128,6 +132,67 @@ def detect_image_request(text: str) -> Optional[str]:
         return text
         
     return None
+
+def detect_self_image_request(text: str) -> bool:
+    """Detect if user is asking the chatbot to show themselves"""
+    self_image_patterns = [
+        r"show me (what you look like|how you look|yourself)",
+        r"take a (selfie|picture of yourself|photo of yourself)",
+        r"what do you look like",
+        r"can i see you",
+        r"show yourself",
+        r"picture of you",
+        r"image of you",
+        r"how do you appear",
+        r"your appearance",
+        r"describe yourself visually"
+    ]
+    
+    text_lower = text.lower()
+    
+    for pattern in self_image_patterns:
+        if re.search(pattern, text_lower):
+            return True
+            
+    return False
+
+def generate_self_image_prompt(personality_id: str, custom_personalities: list, personality_prompts: dict) -> str:
+    """Generate a prompt for the chatbot to create an image of themselves"""
+    
+    # Check if it's a custom personality with an uploaded image
+    custom_personality = next((p for p in custom_personalities if p['id'] == personality_id), None)
+    
+    if custom_personality and custom_personality.get('customImage'):
+        # For custom personalities with images, create a detailed description
+        # Since we can't directly use the uploaded image, we'll create a prompt based on the personality
+        base_prompt = f"A portrait of {custom_personality['name'].lower()}, "
+        
+        # Add personality-based visual traits
+        if 'gaming' in custom_personality.get('prompt', '').lower():
+            base_prompt += "a stylish gamer girl with modern gaming setup background, wearing gaming headphones, confident and enthusiastic expression"
+        elif 'anime' in custom_personality.get('prompt', '').lower():
+            base_prompt += "an anime-style character with expressive eyes, colorful hair, cute and vibrant appearance"
+        elif 'study' in custom_personality.get('prompt', '').lower():
+            base_prompt += "an intelligent student with books and study materials, glasses, focused and friendly demeanor"
+        else:
+            base_prompt += "a friendly and approachable person with a warm smile, representing their unique personality"
+            
+        return base_prompt + ", high quality portrait, detailed, beautiful lighting"
+    
+    # Built-in personality self-image prompts
+    self_prompts = {
+        "lover": "A romantic and beautiful woman with warm, loving eyes, soft flowing hair, wearing elegant clothing, gentle smile, romantic lighting, intimate and caring expression, high quality portrait",
+        
+        "therapist": "A professional and compassionate female therapist, wearing business casual attire, warm and understanding expression, sitting in a comfortable office setting with soft lighting, trustworthy and calming presence",
+        
+        "best_friend": "A fun and energetic young woman with a bright, genuine smile, casual trendy outfit, playful expression, vibrant and bubbly personality showing through, natural lighting, friendly and approachable",
+        
+        "fantasy_rpg": "A mystical elven woman with ethereal beauty, long flowing hair, magical clothing with fantasy elements, enchanting eyes that sparkle with wisdom, surrounded by subtle magical aura, fantasy art style",
+        
+        "neutral": "A professional and friendly woman with a welcoming smile, business attire, confident and approachable demeanor, modern office background, clear and professional lighting"
+    }
+    
+    return self_prompts.get(personality_id, self_prompts["neutral"])
 
 def extract_image_from_response(text: str) -> Optional[str]:
     """Extract image generation prompt from AI response"""
