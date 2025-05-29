@@ -311,18 +311,34 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
             {formData.isPublic && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tags (Optional)
+                  Categories & Tags
                 </label>
-                <input
-                  type="text"
-                  value={formData.tags}
-                  onChange={(e) => setFormData({...formData, tags: e.target.value})}
-                  placeholder="e.g., gaming, study, roleplay, fantasy"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Separate tags with commas to help others discover your personality
-                </p>
+                <div className="max-h-64 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                  {availableCategories.map((category) => (
+                    <div key={category.category} className="mb-4">
+                      <h4 className="font-medium text-gray-800 mb-2">{category.category}</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {category.tags.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => handleTagToggle(tag)}
+                            className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                              formData.tags.includes(tag)
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 text-xs text-gray-500">
+                  Selected tags: {formData.tags.length > 0 ? formData.tags.join(', ') : 'None'}
+                </div>
               </div>
             )}
           </div>
