@@ -1548,7 +1548,7 @@ const ChatInterface = () => {
     </div>
   );
   const HomePage = () => (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black pb-20 md:pb-0">
       <div className="container mx-auto max-w-6xl p-4">
         {/* Header */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 mb-6">
