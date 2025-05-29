@@ -296,7 +296,17 @@ async def chat_completion(
         
         # Generate image if requested by user or AI
         if image_request or image_prompt:
-            prompt_to_use = image_prompt if image_prompt else image_request
+            prompt_to_use = None
+            if detect_self_image_request(user_message):
+                # Get custom personalities from database
+                custom_personalities = []  # This should be populated from your database
+                prompt_to_use = generate_self_image_prompt(
+                    chat_request.personality,
+                    custom_personalities,
+                    PERSONALITY_PROMPTS
+                )
+            else:
+                prompt_to_use = image_prompt if image_prompt else image_request
             
             # Determine style based on personality
             style_mapping = {
