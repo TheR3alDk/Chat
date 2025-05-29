@@ -14,7 +14,9 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
     emoji: '',
     customImage: null,
     prompt: '',
-    scenario: '' // New field for conversation scenario
+    scenario: '', // New field for conversation scenario
+    isPublic: false, // New field for public/private setting
+    tags: '' // New field for tags (comma-separated)
   });
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
