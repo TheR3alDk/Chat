@@ -439,6 +439,11 @@ const ChatInterface = () => {
     }
   }, []);
 
+  // Reload public personalities when discovery filters change
+  useEffect(() => {
+    loadPublicPersonalities();
+  }, [discoverySearchTerm, discoveryGenderFilter, discoveryTagFilters]);
+
   // Start proactive messaging when personality changes or when enabled
   useEffect(() => {
     if (proactiveEnabled && currentPersonality && lastMessageTimes[currentPersonality]) {
