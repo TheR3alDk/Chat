@@ -406,6 +406,34 @@ const ChatInterface = () => {
     return builtInEmojis[personalityId] || '👩‍💼';
   };
 
+  const getPersonalityImage = (personalityId) => {
+    const customPersonality = customPersonalities.find(p => p.id === personalityId);
+    return customPersonality?.customImage || null;
+  };
+
+  const PersonalityAvatar = ({ personalityId, size = "small" }) => {
+    const customImage = getPersonalityImage(personalityId);
+    const emoji = getPersonalityEmoji(personalityId);
+    
+    const sizeClasses = {
+      small: "w-6 h-6",
+      medium: "w-8 h-8", 
+      large: "w-12 h-12"
+    };
+    
+    if (customImage) {
+      return (
+        <img 
+          src={customImage} 
+          alt="Personality" 
+          className={`${sizeClasses[size]} rounded-full object-cover border border-gray-300 flex-shrink-0`}
+        />
+      );
+    }
+    
+    return <span className="text-lg">{emoji}</span>;
+  };
+
   const isCustomPersonality = (personalityId) => {
     return customPersonalities.some(p => p.id === personalityId);
   };
