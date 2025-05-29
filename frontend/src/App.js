@@ -1754,10 +1754,12 @@ const ChatInterface = () => {
         {/* Blur overlay */}
         {currentPersonalityImage && (
           <div 
-            className="absolute inset-0 bg-black/70"
+            className="absolute inset-0 blur-overlay"
             style={{ 
+              background: 'rgba(0, 0, 0, 0.7)',
               backdropFilter: 'blur(25px)',
-              WebkitBackdropFilter: 'blur(25px)'
+              WebkitBackdropFilter: 'blur(25px)',
+              zIndex: 1
             }}
           />
         )}
