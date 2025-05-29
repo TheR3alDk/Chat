@@ -175,6 +175,53 @@ def detect_self_image_request(text: str) -> bool:
             
     return False
 
+def build_system_prompt_with_scenario(base_prompt: str, custom_personalities: list, personality_id: str, is_first_message: bool = False) -> str:
+    """Build system prompt incorporating scenario context for custom personalities"""
+    
+    # Find custom personality with scenario
+    custom_personality = next((p for p in custom_personalities if p.get('id') == personality_id), None)
+    
+    if not custom_personality or not custom_personality.get('scenario'):
+        return base_prompt
+    
+    scenario = custom_personality.get('scenario', '').strip()
+    if not scenario:
+        return base_prompt
+    
+    # Add scenario context to the system prompt
+    scenario_context = f"\n\nScenario Context: {scenario}"
+    
+    if is_first_message:
+        scenario_context += f"\n\nSince this is the start of your conversation, keep this scenario in mind and let it naturally influence your response. You can reference the scenario if appropriate, but don't force it - let it flow naturally into the conversation."
+    else:
+        scenario_context += f"\n\nThis scenario provides ongoing context for your relationship and interactions with the user."
+    
+    return base_prompt + scenario_context
+
+def generate_opening_message_prompt(personality_id: str, custom_personalities: list, base_prompt: str) -> str:
+    """Generate a prompt for the AI to send an opening message based on scenario"""
+    
+    custom_personality = next((p for p in custom_personalities if p.get('id') == personality_id), None)
+    
+    if not custom_personality or not custom_personality.get('scenario'):
+        return None
+    
+    scenario = custom_personality.get('scenario', '').strip()
+    name = custom_personality.get('name', 'AI')
+    
+    if not scenario:
+        return None
+    
+    opening_prompt = f"""You are {name} with the following personality: {base_prompt}
+
+Scenario: {scenario}
+
+Send a natural opening message to start the conversation based on this scenario. Be authentic to your personality and make the message feel organic to the situation described. Don't explicitly mention that this is a "scenario" or "roleplay" - just naturally embody the situation and start the conversation as your character would.
+
+Keep your opening message conversational, engaging, and true to both your personality and the scenario context."""
+
+    return opening_prompt
+
 def generate_self_image_prompt(personality_id: str, custom_personalities: list, personality_prompts: dict) -> str:
     """Generate a prompt for the chatbot to create an image of themselves"""
     
