@@ -13,7 +13,8 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
     description: '',
     emoji: '',
     customImage: null,
-    prompt: ''
+    prompt: '',
+    scenario: '' // New field for conversation scenario
   });
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
