@@ -376,6 +376,14 @@ const ChatInterface = () => {
         imagePrompt: response.data.image_prompt
       };
 
+      // Debug logging
+      if (response.data.image) {
+        console.log('Image received:', response.data.image.substring(0, 50) + '...');
+        console.log('Image prompt:', response.data.image_prompt);
+      } else {
+        console.log('No image in response');
+      }
+
       setMessages([...newMessages, assistantMessage]);
     } catch (err) {
       setError(
