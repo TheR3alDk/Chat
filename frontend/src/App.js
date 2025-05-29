@@ -588,12 +588,20 @@ const ChatInterface = () => {
                       alt={message.imagePrompt || "Generated image"}
                       className="max-w-full h-auto rounded-lg border border-gray-200"
                       loading="lazy"
+                      onLoad={() => console.log('Image loaded successfully')}
+                      onError={(e) => console.log('Image load error:', e)}
                     />
                     {message.imagePrompt && (
                       <p className="text-xs text-gray-500 mt-1 italic">
                         🎨 Generated: {message.imagePrompt}
                       </p>
                     )}
+                  </div>
+                )}
+                {/* Debug display */}
+                {message.image && (
+                  <div className="text-xs text-gray-400 mt-1">
+                    🐛 Debug: Image data length: {message.image.length}
                   </div>
                 )}
               </div>
