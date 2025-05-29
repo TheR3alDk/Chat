@@ -203,6 +203,10 @@ async def chat_completion(
                 PERSONALITY_PROMPTS["neutral"]
             )
         
+        # Check if user is requesting an image
+        user_message = chat_request.messages[-1].content if chat_request.messages else ""
+        image_request = detect_image_request(user_message)
+        
         # Prepare messages for SambaNova API
         messages = [{"role": "system", "content": system_prompt}]
         messages.extend([
@@ -219,14 +223,41 @@ async def chat_completion(
             stream=False
         )
         
+        response_text = response.choices[0].message.content
+        
+        # Check if AI wants to generate an image
+        image_prompt = extract_image_from_response(response_text)
+        generated_image = None
+        
+        # Generate image if requested by user or AI
+        if image_request or image_prompt:
+            prompt_to_use = image_prompt if image_prompt else image_request
+            
+            # Determine style based on personality
+            style_mapping = {
+                "fantasy_rpg": "artistic",
+                "best_friend": "cartoon",
+                "lover": "artistic",
+                "therapist": "realistic",
+                "neutral": "realistic"
+            }
+            style = style_mapping.get(chat_request.personality, "realistic")
+            
+            generated_image = await generate_image_with_fal(prompt_to_use, style)
+        
+        # Clean the response text of image markers
+        clean_text = clean_response_text(response_text)
+        
         return ChatResponse(
-            response=response.choices[0].message.content,
+            response=clean_text,
             personality_used=chat_request.personality,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat(),
+            image=generated_image,
+            image_prompt=image_prompt or (image_request if generated_image else None)
         )
         
     except Exception as e:
-        logging.error(f"SambaNova API Error: {str(e)}")
+        logging.error(f"Chat completion error: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"AI service error: {str(e)}"
