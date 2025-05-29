@@ -247,6 +247,8 @@ const ChatInterface = () => {
   const [showCreator, setShowCreator] = useState(false);
   const [editingPersonality, setEditingPersonality] = useState(null);
   const [proactiveEnabled, setProactiveEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationPermission, setNotificationPermission] = useState('default');
   const [lastMessageTime, setLastMessageTime] = useState(null);
   const messagesEndRef = useRef(null);
   const proactiveTimerRef = useRef(null);
