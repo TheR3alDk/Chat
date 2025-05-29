@@ -311,19 +311,27 @@ const ChatInterface = () => {
     };
   }, [currentPersonality, proactiveEnabled, lastMessageTimes, customPersonalities]);
 
-  // Save messages and update last message time whenever messages change
+  // Save messages and update last message time whenever conversations change
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('chatMessages', JSON.stringify(messages));
-      // Update last message time when user sends a message
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.role === 'user' || lastMessage.role === 'assistant') {
-        const timestamp = lastMessage.timestamp || new Date().toISOString();
-        setLastMessageTime(timestamp);
-        localStorage.setItem('lastMessageTime', timestamp);
-      }
+    if (Object.keys(conversations).length > 0) {
+      localStorage.setItem('conversations', JSON.stringify(conversations));
+      
+      // Update last message times for each conversation
+      const newLastMessageTimes = { ...lastMessageTimes };
+      Object.entries(conversations).forEach(([personalityId, messages]) => {
+        if (messages.length > 0) {
+          const lastMessage = messages[messages.length - 1];
+          if (lastMessage.role === 'user' || lastMessage.role === 'assistant') {
+            const timestamp = lastMessage.timestamp || new Date().toISOString();
+            newLastMessageTimes[personalityId] = timestamp;
+          }
+        }
+      });
+      
+      setLastMessageTimes(newLastMessageTimes);
+      localStorage.setItem('lastMessageTimes', JSON.stringify(newLastMessageTimes));
     }
-  }, [messages]);
+  }, [conversations]);
 
   const loadPersonalities = async () => {
     try {
