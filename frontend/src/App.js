@@ -8,7 +8,7 @@ const API = `${BACKEND_URL}/api`;
 const ChatInterface = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [personality, setPersonality] = useState('lover');
+  const [personality, setPersonality] = useState('best_friend');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [personalities, setPersonalities] = useState([]);
