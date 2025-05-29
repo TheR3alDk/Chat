@@ -1527,10 +1527,7 @@ const ChatInterface = () => {
         {activeTab === 'profile' && <ProfilePage />}
 
         {/* Create Button - Always Visible but positioned to avoid tab bar */}
-        <div className="fixed z-40" style={{
-          bottom: typeof window !== 'undefined' && window.innerWidth < 768 ? '100px' : '24px',
-          right: '24px'
-        }}>
+        <div className="fixed bottom-24 right-6 md:bottom-6 z-40">
           <button
             onClick={() => {
               setEditingPersonality(null);
