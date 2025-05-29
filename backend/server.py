@@ -275,13 +275,13 @@ async def should_send_proactive_message(last_message_time: str, personality_id: 
         current_time = datetime.now(timezone.utc)
         minutes_passed = (current_time - last_time).total_seconds() / 60
         
-        # Personality-based proactive messaging frequency
+        # Personality-based proactive messaging frequency (in minutes)
         proactive_intervals = {
-            "lover": 15,        # More frequent, loving attention
-            "best_friend": 20,  # Casual frequent check-ins
-            "therapist": 45,    # Professional, respectful intervals
-            "fantasy_rpg": 30,  # Mystical encounters
-            "neutral": 60       # Professional, less frequent
+            "lover": 5,         # More frequent, loving attention (was 15)
+            "best_friend": 7,   # Casual frequent check-ins (was 20)
+            "therapist": 15,    # Professional, respectful intervals (was 45)
+            "fantasy_rpg": 10,  # Mystical encounters (was 30)
+            "neutral": 20       # Professional, less frequent (was 60)
         }
         
         min_interval = proactive_intervals.get(personality_id, 30)
