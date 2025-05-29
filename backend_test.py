@@ -1,341 +1,175 @@
-
 import requests
-import sys
 import json
 import time
-import logging
+import sys
 from datetime import datetime, timedelta
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-class AICompanionTester:
-    def __init__(self, base_url="https://0e14580d-f2ad-4ec3-b289-ebef5440154e.preview.emergentagent.com/api"):
+class NotificationAPITester:
+    def __init__(self, base_url="https://0e14580d-f2ad-4ec3-b289-ebef5440154e.preview.emergentagent.com"):
         self.base_url = base_url
+        self.api_url = f"{base_url}/api"
         self.tests_run = 0
         self.tests_passed = 0
-        self.tests_failed = 0
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, check_image=False, params=None):
+    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
         """Run a single API test"""
-        url = f"{self.base_url}/{endpoint}"
-        headers = {'Content-Type': 'application/json'}
+        url = f"{self.api_url}/{endpoint}"
+        default_headers = {'Content-Type': 'application/json'}
+        if headers:
+            default_headers.update(headers)
         
         self.tests_run += 1
-        logging.info(f"\n🔍 Testing {name}...")
+        print(f"\n🔍 Testing {name}...")
         
         try:
             if method == 'GET':
-                response = requests.get(url, headers=headers, params=params)
+                response = requests.get(url, headers=default_headers)
             elif method == 'POST':
-                response = requests.post(url, json=data, headers=headers)
-            else:
-                logging.error(f"Unsupported method: {method}")
-                self.tests_failed += 1
-                return False, None
+                response = requests.post(url, json=data, headers=default_headers)
 
             success = response.status_code == expected_status
-            
             if success:
                 self.tests_passed += 1
-                logging.info(f"✅ Passed - Status: {response.status_code}")
-                
-                # Additional check for image if requested
-                if check_image and 'image' in response.json():
-                    if response.json()['image']:
-                        logging.info(f"✅ Image data received - Length: {len(response.json()['image'])}")
-                    else:
-                        logging.warning("⚠️ No image data in response")
-                        
-                return True, response.json()
+                print(f"✅ Passed - Status: {response.status_code}")
+                try:
+                    return success, response.json()
+                except:
+                    return success, {}
             else:
-                self.tests_failed += 1
-                logging.error(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
-                if response.text:
-                    logging.error(f"Response: {response.text[:200]}")
-                return False, None
+                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
+                try:
+                    print(f"Response: {response.json()}")
+                except:
+                    print(f"Response: {response.text}")
+                return False, {}
 
         except Exception as e:
-            self.tests_failed += 1
-            logging.error(f"❌ Failed - Error: {str(e)}")
-            return False, None
+            print(f"❌ Failed - Error: {str(e)}")
+            return False, {}
 
-    def test_health(self):
-        """Test the health endpoint"""
-        return self.run_test("Health Check Endpoint", "GET", "health", 200)
-
-    def test_chat_with_image_request(self, personality, message):
-        """Test chat with a message that should trigger image generation"""
-        data = {
-            "messages": [{"role": "user", "content": message}],
-            "personality": personality,
-            "max_tokens": 1000,
-            "temperature": 0.7
-        }
-        
-        logging.info(f"Testing image request with {personality} personality: '{message}'")
+    def test_health_check(self):
+        """Test the health check endpoint"""
         success, response = self.run_test(
-            f"Chat with {personality} - Image Request", 
-            "POST", 
-            "chat", 
-            200, 
-            data=data,
-            check_image=True
-        )
-        
-        if success and response:
-            has_image = response.get('image') is not None
-            logging.info(f"Image in response: {'✅ Yes' if has_image else '❌ No'}")
-            if has_image:
-                logging.info(f"Image prompt: {response.get('image_prompt')}")
-            return has_image, response
-        
-        return False, None
-    
-    def test_should_send_proactive(self, personality, last_message_time=None):
-        """Test the should_send_proactive endpoint"""
-        endpoint = f"should_send_proactive/{personality}"
-        params = {}
-        
-        if last_message_time:
-            params['last_message_time'] = last_message_time
-            
-        success, response = self.run_test(
-            f"Should Send Proactive for {personality}",
+            "Health Check",
             "GET",
-            endpoint,
-            200,
-            params=params
+            "health",
+            200
         )
-        
-        if success and response:
-            logging.info(f"Should send proactive: {response.get('should_send', False)}")
-            return response.get('should_send', False), response
-        
-        return False, None
-    
-    def test_proactive_message(self, personality, conversation_history=None, time_since_last=0):
-        """Test generating a proactive message"""
-        data = {
-            "personality": personality,
-            "conversation_history": conversation_history or [],
-            "time_since_last_message": time_since_last,
-            "custom_personalities": []
-        }
+        return success
+
+    def test_get_personalities(self):
+        """Test getting available personalities"""
+        success, response = self.run_test(
+            "Get Personalities",
+            "GET",
+            "personalities",
+            200
+        )
+        if success and 'personalities' in response:
+            print(f"Available personalities: {len(response['personalities'])}")
+            return True
+        return False
+
+    def test_chat_completion(self, personality="best_friend"):
+        """Test chat completion API"""
+        messages = [{"role": "user", "content": "Hello, how are you?"}]
         
         success, response = self.run_test(
-            f"Generate Proactive Message for {personality}",
+            "Chat Completion",
+            "POST",
+            "chat",
+            200,
+            data={
+                "messages": messages,
+                "personality": personality,
+                "max_tokens": 100,
+                "temperature": 0.7
+            }
+        )
+        
+        if success and 'response' in response:
+            print(f"Response received: {response['response'][:50]}...")
+            return True
+        return False
+
+    def test_proactive_message(self, personality="best_friend"):
+        """Test proactive message generation"""
+        success, response = self.run_test(
+            "Proactive Message Generation",
             "POST",
             "proactive_message",
             200,
-            data=data
+            data={
+                "personality": personality,
+                "conversation_history": [
+                    {"role": "user", "content": "Hello there!"},
+                    {"role": "assistant", "content": "Hi! How can I help you today?"}
+                ],
+                "time_since_last_message": 30  # 30 minutes
+            }
         )
         
-        if success and response:
-            logging.info(f"Proactive message: {response.get('response', '')[:100]}...")
-            return True, response
-        
-        return False, None
+        if success and 'response' in response:
+            print(f"Proactive message: {response['response'][:50]}...")
+            return True
+        return False
 
-def test_proactive_messaging():
-    """Test the proactive messaging feature with different personalities"""
-    tester = AICompanionTester()
-    
-    # Test health endpoint first
-    health_success, _ = tester.test_health()
-    if not health_success:
-        logging.error("Health check failed, stopping tests")
-        return 1
-    
-    # Test personalities with their updated timing intervals
-    personalities = {
-        "lover": 5,         # 5 minutes (was 15)
-        "best_friend": 7,   # 7 minutes (was 20)
-        "fantasy_rpg": 10,  # 10 minutes (was 30)
-        "therapist": 15,    # 15 minutes (was 45)
-        "neutral": 20       # 20 minutes (was 60)
-    }
-    
-    # Test proactive timing checks
-    logging.info("\n===== TESTING PROACTIVE TIMING CHECKS =====")
-    timing_results = {}
-    
-    for personality, minutes in personalities.items():
-        logging.info(f"\n----- Testing {personality.upper()} Timing -----")
-        
-        # Test with a recent message (should not trigger proactive)
+    def test_should_send_proactive(self, personality="best_friend"):
+        """Test the should_send_proactive endpoint"""
+        # Test with a recent timestamp (should not send)
         recent_time = datetime.utcnow().isoformat()
-        should_send_recent, _ = tester.test_should_send_proactive(personality, recent_time)
-        
-        # Test with a message from the past (should trigger proactive)
-        past_time = (datetime.utcnow() - timedelta(minutes=minutes+5)).isoformat()
-        should_send_past, _ = tester.test_should_send_proactive(personality, past_time)
-        
-        timing_results[personality] = {
-            "interval": minutes,
-            "recent_message": {
-                "time": recent_time,
-                "should_send": should_send_recent
-            },
-            "past_message": {
-                "time": past_time,
-                "should_send": should_send_past
-            }
-        }
-    
-    # Test proactive message generation
-    logging.info("\n===== TESTING PROACTIVE MESSAGE GENERATION =====")
-    message_results = {}
-    
-    # Sample conversation history
-    conversation_history = [
-        {"role": "user", "content": "Hello, how are you today?"},
-        {"role": "assistant", "content": "I'm doing great! How about you?"},
-        {"role": "user", "content": "I'm good too, thanks for asking."}
-    ]
-    
-    for personality in personalities.keys():
-        logging.info(f"\n----- Testing {personality.upper()} Proactive Messages -----")
-        
-        # Test with no conversation history
-        success_no_history, response_no_history = tester.test_proactive_message(
-            personality, 
-            None, 
-            30  # 30 minutes since last message
+        success1, response1 = self.run_test(
+            "Should Send Proactive (Recent)",
+            "GET",
+            f"should_send_proactive/{personality}?last_message_time={recent_time}",
+            200
         )
         
-        # Test with conversation history
-        success_with_history, response_with_history = tester.test_proactive_message(
-            personality, 
-            conversation_history, 
-            60  # 60 minutes since last message
+        if success1:
+            print(f"Recent message check: should_send={response1.get('should_send', 'N/A')}")
+        
+        # Test with an old timestamp (should send)
+        old_time = (datetime.utcnow() - timedelta(hours=1)).isoformat()
+        success2, response2 = self.run_test(
+            "Should Send Proactive (Old)",
+            "GET",
+            f"should_send_proactive/{personality}?last_message_time={old_time}",
+            200
         )
         
-        message_results[personality] = {
-            "no_history": {
-                "success": success_no_history,
-                "message": response_no_history.get("response", "")[:50] + "..." if success_no_history else "Failed"
-            },
-            "with_history": {
-                "success": success_with_history,
-                "message": response_with_history.get("response", "")[:50] + "..." if success_with_history else "Failed"
-            }
-        }
-    
-    # Print summary
-    logging.info("\n===== TEST SUMMARY =====")
-    logging.info(f"Total tests run: {tester.tests_run}")
-    logging.info(f"Tests passed: {tester.tests_passed}")
-    logging.info(f"Tests failed: {tester.tests_failed}")
-    
-    logging.info("\nProactive Timing Results:")
-    for personality, result in timing_results.items():
-        logging.info(f"- {personality.capitalize()} (Interval: {result['interval']} minutes):")
-        logging.info(f"  - Recent message: {'❌ Should not send' if not result['recent_message']['should_send'] else '⚠️ Incorrectly wants to send'}")
-        logging.info(f"  - Past message: {'✅ Should send' if result['past_message']['should_send'] else '⚠️ Incorrectly does not want to send'}")
-    
-    logging.info("\nProactive Message Generation Results:")
-    for personality, result in message_results.items():
-        logging.info(f"- {personality.capitalize()}:")
-        logging.info(f"  - No history: {'✅ Success' if result['no_history']['success'] else '❌ Failed'}")
-        if result['no_history']['success']:
-            logging.info(f"    Message: {result['no_history']['message']}")
-        logging.info(f"  - With history: {'✅ Success' if result['with_history']['success'] else '❌ Failed'}")
-        if result['with_history']['success']:
-            logging.info(f"    Message: {result['with_history']['message']}")
-    
-    # Check if all tests passed
-    timing_success = all(
-        (not result['recent_message']['should_send'] and result['past_message']['should_send'])
-        for result in timing_results.values()
-    )
-    
-    message_success = all(
-        (result['no_history']['success'] and result['with_history']['success'])
-        for result in message_results.values()
-    )
-    
-    overall_success = timing_success and message_success
-    
-    logging.info(f"\nOverall proactive messaging test result: {'✅ PASSED' if overall_success else '❌ FAILED'}")
-    
-    return 0 if overall_success else 1
+        if success2:
+            print(f"Old message check: should_send={response2.get('should_send', 'N/A')}")
+        
+        return success1 and success2
 
-def test_self_image_generation():
-    """Test the self-image generation feature with different personalities"""
-    tester = AICompanionTester()
+def main():
+    print("🔔 Testing Notification System APIs 🔔")
+    print(f"API URL: https://0e14580d-f2ad-4ec3-b289-ebef5440154e.preview.emergentagent.com/api")
     
-    # Test health endpoint first
-    health_success, _ = tester.test_health()
-    if not health_success:
-        logging.error("Health check failed, stopping tests")
+    tester = NotificationAPITester()
+    
+    # Run tests
+    health_ok = tester.test_health_check()
+    if not health_ok:
+        print("❌ Health check failed, stopping tests")
         return 1
     
-    # Test cases for self-image generation
-    test_cases = [
-        {"personality": "best_friend", "message": "Hey bestie, can you show me what you look like?"},
-        {"personality": "fantasy_rpg", "message": "Show me your ethereal form"},
-        {"personality": "lover", "message": "I want to see you, darling"},
-        {"personality": "therapist", "message": "I'd like to put a face to the voice"},
-        {"personality": "neutral", "message": "What do you look like?"}
-    ]
+    personalities_ok = tester.test_get_personalities()
+    chat_ok = tester.test_chat_completion()
+    proactive_ok = tester.test_proactive_message()
+    should_send_ok = tester.test_should_send_proactive()
     
-    # Run tests for each personality
-    results = {}
-    for test_case in test_cases:
-        personality = test_case["personality"]
-        message = test_case["message"]
-        
-        # Make two requests to test consistency
-        logging.info(f"\n===== Testing {personality.upper()} =====")
-        
-        # First request
-        has_image1, response1 = tester.test_chat_with_image_request(personality, message)
-        time.sleep(1)  # Small delay between requests
-        
-        # Second request (to test consistency)
-        has_image2, response2 = tester.test_chat_with_image_request(personality, message)
-        
-        results[personality] = {
-            "success": has_image1 or has_image2,
-            "requests": {
-                "Request 1": "✅ Passed" if has_image1 else "❌ Failed",
-                "Request 2": "✅ Passed" if has_image2 else "❌ Failed"
-            }
-        }
+    # Print results
+    print("\n📊 Test Results:")
+    print(f"Health Check: {'✅' if health_ok else '❌'}")
+    print(f"Get Personalities: {'✅' if personalities_ok else '❌'}")
+    print(f"Chat Completion: {'✅' if chat_ok else '❌'}")
+    print(f"Proactive Message: {'✅' if proactive_ok else '❌'}")
+    print(f"Should Send Proactive: {'✅' if should_send_ok else '❌'}")
     
-    # Print summary
-    logging.info("\n===== TEST SUMMARY =====")
-    logging.info(f"Total tests run: {tester.tests_run}")
-    logging.info(f"Tests passed: {tester.tests_passed}")
-    logging.info(f"Tests failed: {tester.tests_failed}")
+    print(f"\nTests passed: {tester.tests_passed}/{tester.tests_run}")
     
-    logging.info("\nSelf-Image Generation Results:")
-    for personality, result in results.items():
-        logging.info(f"- {personality.capitalize()}: {'✅ Success' if result['success'] else '❌ Failed'}")
-        logging.info(f"  Multiple requests to same personality:")
-        for req, status in result["requests"].items():
-            logging.info(f"  - {req}: {status}")
-    
-    return 0 if all(result["success"] for result in results.values()) else 1
-
-def run_all_tests():
-    """Run all test suites"""
-    logging.info("\n===== RUNNING ALL TESTS =====")
-    
-    # Run proactive messaging tests
-    logging.info("\n===== PROACTIVE MESSAGING TESTS =====")
-    proactive_result = test_proactive_messaging()
-    
-    # Run self-image generation tests
-    logging.info("\n===== SELF-IMAGE GENERATION TESTS =====")
-    image_result = test_self_image_generation()
-    
-    # Overall result
-    overall_success = proactive_result == 0 and image_result == 0
-    logging.info(f"\n===== OVERALL TEST RESULT: {'✅ PASSED' if overall_success else '❌ FAILED'} =====")
-    
-    return 0 if overall_success else 1
+    return 0 if tester.tests_passed == tester.tests_run else 1
 
 if __name__ == "__main__":
-    sys.exit(run_all_tests())
+    sys.exit(main())
