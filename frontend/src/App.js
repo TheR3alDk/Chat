@@ -1532,7 +1532,7 @@ const ChatInterface = () => {
     </div>
   );
   const HomePage = () => (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-black">
       <div className="container mx-auto max-w-6xl p-4">
         {/* Header */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 mb-6">
