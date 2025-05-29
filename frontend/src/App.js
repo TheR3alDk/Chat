@@ -1149,7 +1149,370 @@ const ChatInterface = () => {
     return 0;
   };
 
-  // Home Page Component - Fixed to show cards instead of old interface
+  // Discovery Page Component
+  const DiscoveryPage = () => {
+    const [availableCategories, setAvailableCategories] = useState([]);
+    
+    useEffect(() => {
+      loadCategories();
+    }, []);
+    
+    const loadCategories = async () => {
+      try {
+        const response = await axios.get(`${API}/personalities/tags`);
+        setAvailableCategories(response.data.categories || []);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    };
+    
+    const handleTagFilterToggle = (tag) => {
+      setDiscoveryTagFilters(prev => 
+        prev.includes(tag) 
+          ? prev.filter(t => t !== tag)
+          : [...prev, tag]
+      );
+    };
+    
+    const clearFilters = () => {
+      setDiscoverySearchTerm('');
+      setDiscoveryGenderFilter('');
+      setDiscoveryTagFilters([]);
+    };
+    
+    return (
+      <div className="space-y-6">
+        {/* Search and Filters */}
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
+          <h2 className="text-xl font-bold text-white mb-4">🌍 Discover AI Personalities</h2>
+          
+          {/* Search Bar */}
+          <div className="mb-4">
+            <input
+              type="text"
+              value={discoverySearchTerm}
+              onChange={(e) => setDiscoverySearchTerm(e.target.value)}
+              placeholder="Search personalities..."
+              className="w-full p-3 bg-white/20 backdrop-blur-md text-white placeholder-white/60 border border-white/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+          
+          {/* Gender Filter */}
+          <div className="mb-4">
+            <label className="block text-white text-sm font-medium mb-2">Filter by Gender:</label>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setDiscoveryGenderFilter('')}
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  discoveryGenderFilter === '' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setDiscoveryGenderFilter('female')}
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  discoveryGenderFilter === 'female' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                👩 Female
+              </button>
+              <button
+                onClick={() => setDiscoveryGenderFilter('male')}
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  discoveryGenderFilter === 'male' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                👨 Male
+              </button>
+              <button
+                onClick={() => setDiscoveryGenderFilter('non-binary')}
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  discoveryGenderFilter === 'non-binary' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                ⚧️ Non-Binary
+              </button>
+              <button
+                onClick={() => setDiscoveryGenderFilter('other')}
+                className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                  discoveryGenderFilter === 'other' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                🌈 Other
+              </button>
+            </div>
+          </div>
+          
+          {/* Category Filters */}
+          {availableCategories.length > 0 && (
+            <div className="mb-4">
+              <label className="block text-white text-sm font-medium mb-2">Filter by Tags:</label>
+              <div className="max-h-48 overflow-y-auto space-y-3">
+                {availableCategories.map((category) => (
+                  <div key={category.category}>
+                    <h4 className="text-white/80 font-medium mb-1">{category.category}</h4>
+                    <div className="flex gap-1 flex-wrap">
+                      {category.tags.map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={() => handleTagFilterToggle(tag)}
+                          className={`px-2 py-1 rounded text-xs transition-colors ${
+                            discoveryTagFilters.includes(tag)
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-white/20 text-white hover:bg-white/30'
+                          }`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Active Filters and Clear */}
+          {(discoverySearchTerm || discoveryGenderFilter || discoveryTagFilters.length > 0) && (
+            <div className="flex items-center justify-between">
+              <div className="text-white/70 text-sm">
+                {publicPersonalities.length} personalities found
+              </div>
+              <button
+                onClick={clearFilters}
+                className="bg-red-500/80 hover:bg-red-600/80 text-white px-3 py-1 rounded text-sm transition-colors"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
+        </div>
+        
+        {/* Public Personalities Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {publicPersonalities.map((personality) => (
+            <PersonalityCard
+              key={personality.id}
+              personality={personality}
+              isPublic={true}
+              onChat={async (personalityId) => {
+                setCurrentPersonality(personalityId);
+                // Generate opening message for public personalities if they have scenarios
+                const currentMessages = conversations[personalityId] || [];
+                if (currentMessages.length === 0 && personality.scenario) {
+                  await generateOpeningMessage(personalityId);
+                }
+              }}
+            />
+          ))}
+        </div>
+        
+        {/* Empty State */}
+        {publicPersonalities.length === 0 && (
+          <div className="text-center text-white/60 py-12">
+            <h3 className="text-xl mb-2">No personalities found</h3>
+            <p>Try adjusting your filters or create your own personality to share!</p>
+            <button
+              onClick={() => {
+                setEditingPersonality(null);
+                setShowCreator(true);
+              }}
+              className="bg-green-500/80 hover:bg-green-600/80 text-white px-4 py-2 rounded-lg transition-colors mt-4"
+            >
+              ➕ Create & Share Personality
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Profile Page Component  
+  const ProfilePage = () => (
+    <div className="space-y-6">
+      {/* Profile Header */}
+      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
+        <h2 className="text-2xl font-bold text-white mb-4">👤 Your Profile</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-blue-400">{customPersonalities.length}</div>
+            <div className="text-white/70">Custom Personalities</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-green-400">{userPersonalities.length}</div>
+            <div className="text-white/70">Public Creations</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-purple-400">
+              {Object.keys(conversations).length}
+            </div>
+            <div className="text-white/70">Active Conversations</div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Settings */}
+      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
+        <h3 className="text-xl font-bold text-white mb-4">⚙️ Settings</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-white font-medium">Notifications</div>
+              <div className="text-white/60 text-sm">Get notified when AI companions message you</div>
+            </div>
+            <button
+              onClick={toggleNotifications}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                notificationsEnabled && notificationPermission === 'granted'
+                  ? 'bg-green-500/80 hover:bg-green-600/80 text-white' 
+                  : 'bg-gray-500/80 hover:bg-gray-600/80 text-white'
+              }`}
+            >
+              {notificationPermission === 'granted' && notificationsEnabled ? 'Enabled' : 'Disabled'}
+            </button>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-white font-medium">Proactive Messaging</div>
+              <div className="text-white/60 text-sm">AI companions will reach out to you automatically</div>
+            </div>
+            <button
+              onClick={() => setProactiveEnabled(!proactiveEnabled)}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                proactiveEnabled 
+                  ? 'bg-green-500/80 hover:bg-green-600/80 text-white' 
+                  : 'bg-gray-500/80 hover:bg-gray-600/80 text-white'
+              }`}
+            >
+              {proactiveEnabled ? 'Enabled' : 'Disabled'}
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Your Public Personalities */}
+      {userPersonalities.length > 0 && (
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
+          <h3 className="text-xl font-bold text-white mb-4">🌍 Your Public Personalities</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {userPersonalities.map((personality) => (
+              <PersonalityCard
+                key={personality.id}
+                personality={personality}
+                isPublic={true}
+                onChat={(personalityId) => setCurrentPersonality(personalityId)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Data Management */}
+      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
+        <h3 className="text-xl font-bold text-white mb-4">🗂️ Data Management</h3>
+        <div className="space-y-3">
+          <button
+            onClick={clearChat}
+            className="w-full bg-red-500/80 hover:bg-red-600/80 text-white p-3 rounded-lg transition-colors"
+          >
+            🗑️ Clear All Conversations
+          </button>
+          <p className="text-white/60 text-sm">
+            This will delete all your conversation history but keep your custom personalities.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Tab Navigation Component
+  const TabNavigation = () => (
+    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 mb-6">
+      <div className="flex gap-2">
+        <button
+          onClick={() => setActiveTab('discover')}
+          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium ${
+            activeTab === 'discover'
+              ? 'bg-blue-500 text-white'
+              : 'text-white/70 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          🌍 Discover
+        </button>
+        <button
+          onClick={() => setActiveTab('chats')}
+          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium ${
+            activeTab === 'chats'
+              ? 'bg-blue-500 text-white'
+              : 'text-white/70 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          💬 My Chats
+        </button>
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium ${
+            activeTab === 'profile'
+              ? 'bg-blue-500 text-white'
+              : 'text-white/70 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          👤 Profile
+        </button>
+      </div>
+    </div>
+  );
+
+  // Enhanced Home Page with Tab Navigation
+  const TabNavigationHomePage = () => (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      <div className="container mx-auto max-w-6xl p-4">
+        {/* Header */}
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 mb-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-white flex items-center gap-2 justify-center">
+              🤖 AI Companion Platform
+            </h1>
+            <p className="text-white/80 mt-2">Your personal social network of AI personalities</p>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <TabNavigation />
+
+        {/* Tab Content */}
+        {activeTab === 'discover' && <DiscoveryPage />}
+        {activeTab === 'chats' && <HomePage />}
+        {activeTab === 'profile' && <ProfilePage />}
+
+        {/* Create Button - Always Visible */}
+        <div className="fixed bottom-6 right-6">
+          <button
+            onClick={() => {
+              setEditingPersonality(null);
+              setShowCreator(true);
+            }}
+            className="bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg transition-colors"
+            title="Create new personality"
+          >
+            ➕
+          </button>
+        </div>
+      </div>
+    </div>
+  );
   const HomePage = () => (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <div className="container mx-auto max-w-6xl p-4">
