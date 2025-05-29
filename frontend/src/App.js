@@ -353,7 +353,9 @@ const ChatInterface = () => {
       const assistantMessage = {
         role: 'assistant',
         content: response.data.response,
-        personality: response.data.personality_used
+        personality: response.data.personality_used,
+        image: response.data.image,
+        imagePrompt: response.data.image_prompt
       };
 
       setMessages([...newMessages, assistantMessage]);
