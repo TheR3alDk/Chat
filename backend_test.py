@@ -147,13 +147,13 @@ def test_proactive_messaging():
         logging.error("Health check failed, stopping tests")
         return 1
     
-    # Test personalities with their expected timing intervals
+    # Test personalities with their updated timing intervals
     personalities = {
-        "lover": 15,        # 15 minutes
-        "best_friend": 20,  # 20 minutes
-        "fantasy_rpg": 30,  # 30 minutes
-        "therapist": 45,    # 45 minutes
-        "neutral": 60       # 60 minutes
+        "lover": 5,         # 5 minutes (was 15)
+        "best_friend": 7,   # 7 minutes (was 20)
+        "fantasy_rpg": 10,  # 10 minutes (was 30)
+        "therapist": 15,    # 15 minutes (was 45)
+        "neutral": 20       # 20 minutes (was 60)
     }
     
     # Test proactive timing checks
