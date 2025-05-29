@@ -15,12 +15,14 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
     customImage: null,
     prompt: '',
     scenario: '',
-    gender: 'female', // New field for gender selection
+    gender: 'female',
     isPublic: false,
-    tags: '' // Will be converted to array
+    tags: []
   });
   const [availableCategories, setAvailableCategories] = useState([]);
-  const [selectedTags, setSelectedTags] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [genderFilter, setGenderFilter] = useState('');
+  const [selectedTagFilters, setSelectedTagFilters] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
 
