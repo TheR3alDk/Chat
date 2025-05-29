@@ -299,11 +299,10 @@ async def chat_completion(
         if image_request or image_prompt:
             prompt_to_use = None
             if detect_self_image_request(user_message):
-                # Get custom personalities from database
-                custom_personalities = []  # This should be populated from your database
+                # Use custom personalities passed in request
                 prompt_to_use = generate_self_image_prompt(
                     chat_request.personality,
-                    custom_personalities,
+                    chat_request.custom_personalities,
                     PERSONALITY_PROMPTS
                 )
             else:
