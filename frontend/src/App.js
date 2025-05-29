@@ -246,7 +246,10 @@ const ChatInterface = () => {
   const [customPersonalities, setCustomPersonalities] = useState([]);
   const [showCreator, setShowCreator] = useState(false);
   const [editingPersonality, setEditingPersonality] = useState(null);
+  const [proactiveEnabled, setProactiveEnabled] = useState(true);
+  const [lastMessageTime, setLastMessageTime] = useState(null);
   const messagesEndRef = useRef(null);
+  const proactiveTimerRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
