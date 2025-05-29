@@ -110,9 +110,11 @@ const ChatInterface = () => {
     const emojis = {
       'lover': '💕',
       'therapist': '🧠',
-      'neutral': '🤖'
+      'best_friend': '👯‍♀️',
+      'fantasy_rpg': '🧚‍♀️',
+      'neutral': '👩‍💼'
     };
-    return emojis[personalityId] || '🤖';
+    return emojis[personalityId] || '👩‍💼';
   };
 
   return (
