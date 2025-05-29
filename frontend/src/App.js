@@ -1504,7 +1504,7 @@ const ChatInterface = () => {
 
   // Enhanced Home Page with Tab Navigation
   const TabNavigationHomePage = () => (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black pb-20 md:pb-0">
       <div className="container mx-auto max-w-6xl p-4">
         {/* Header */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 mb-6">
@@ -1516,16 +1516,18 @@ const ChatInterface = () => {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <TabNavigation />
+        {/* Tab Navigation - Hidden on mobile, shown on desktop at top */}
+        <div className="hidden md:block">
+          <TabNavigation />
+        </div>
 
         {/* Tab Content */}
         {activeTab === 'discover' && <DiscoveryPage />}
         {activeTab === 'chats' && <HomePage />}
         {activeTab === 'profile' && <ProfilePage />}
 
-        {/* Create Button - Always Visible */}
-        <div className="fixed bottom-6 right-6">
+        {/* Create Button - Always Visible but positioned to avoid tab bar */}
+        <div className="fixed bottom-24 right-6 md:bottom-6">
           <button
             onClick={() => {
               setEditingPersonality(null);
@@ -1537,6 +1539,11 @@ const ChatInterface = () => {
             ➕
           </button>
         </div>
+      </div>
+      
+      {/* Mobile Bottom Tab Navigation - Only shown on mobile */}
+      <div className="md:hidden">
+        <TabNavigation />
       </div>
     </div>
   );
