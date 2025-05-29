@@ -256,12 +256,16 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
 const ChatInterface = () => {
   const [conversations, setConversations] = useState({}); // {personalityId: messages[]}
   const [currentPersonality, setCurrentPersonality] = useState(null); // null = home page
+  const [currentTab, setCurrentTab] = useState('discover'); // discover, chats, profile
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [error, setError] = useState(null);
   const [personalities, setPersonalities] = useState([]);
   const [customPersonalities, setCustomPersonalities] = useState([]);
+  const [publicPersonalities, setPublicPersonalities] = useState([]);
+  const [userPersonalities, setUserPersonalities] = useState([]);
+  const [userId] = useState(() => localStorage.getItem('userId') || `user_${Date.now()}`);
   const [showCreator, setShowCreator] = useState(false);
   const [editingPersonality, setEditingPersonality] = useState(null);
   const [proactiveEnabled, setProactiveEnabled] = useState(true);
