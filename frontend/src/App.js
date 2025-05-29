@@ -24,11 +24,6 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
   const [genderFilter, setGenderFilter] = useState('');
   const [selectedTagFilters, setSelectedTagFilters] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
-  
-  // Discovery page filters
-  const [discoverySearchTerm, setDiscoverySearchTerm] = useState('');
-  const [discoveryGenderFilter, setDiscoveryGenderFilter] = useState('');
-  const [discoveryTagFilters, setDiscoveryTagFilters] = useState([]);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
