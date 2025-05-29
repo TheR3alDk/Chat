@@ -476,15 +476,16 @@ const ChatInterface = () => {
   };
 
   const clearChat = () => {
-    setMessages([]);
-    setLastMessageTime(null);
-    localStorage.removeItem('chatMessages');
-    localStorage.removeItem('lastMessageTime');
+    setConversations({});
+    setLastMessageTimes({});
+    localStorage.removeItem('conversations');
+    localStorage.removeItem('lastMessageTimes');
     
-    // Clear proactive timer when chat is cleared
-    if (proactiveTimerRef.current) {
-      clearInterval(proactiveTimerRef.current);
-    }
+    // Clear proactive timers
+    Object.values(proactiveTimersRef.current).forEach(timerId => {
+      clearInterval(timerId);
+    });
+    proactiveTimersRef.current = {};
   };
 
   const getAllPersonalities = () => {
