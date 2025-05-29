@@ -51,6 +51,8 @@ class AICompanionTester:
             else:
                 self.tests_failed += 1
                 logging.error(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
+                if response.text:
+                    logging.error(f"Response: {response.text[:200]}")
                 return False, None
 
         except Exception as e:
@@ -65,9 +67,10 @@ class AICompanionTester:
     def test_chat_with_image_request(self, personality, message):
         """Test chat with a message that should trigger image generation"""
         data = {
-            "message": message,
+            "messages": [{"role": "user", "content": message}],
             "personality": personality,
-            "conversation_history": []
+            "max_tokens": 1000,
+            "temperature": 0.7
         }
         
         logging.info(f"Testing image request with {personality} personality: '{message}'")
