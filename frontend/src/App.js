@@ -375,8 +375,8 @@ const ChatInterface = () => {
       saveCustomPersonalities(updated);
       
       // Switch to default if current personality is deleted
-      if (personality === personalityId) {
-        setPersonality('best_friend');
+      if (currentPersonality === personalityId) {
+        setCurrentPersonality('best_friend');
       }
     }
   };
