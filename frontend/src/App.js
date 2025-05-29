@@ -866,6 +866,55 @@ const ChatInterface = () => {
     }
   };
 
+  const generateOpeningMessage = async (personalityId) => {
+    const customPersonality = customPersonalities.find(p => p.id === personalityId);
+    
+    if (!customPersonality || !customPersonality.scenario) {
+      return; // No scenario, no opening message needed
+    }
+    
+    try {
+      const requestData = {
+        messages: [],
+        personality: personalityId,
+        custom_personalities: customPersonalities,
+        custom_prompt: customPersonality.prompt,
+        max_tokens: 300,
+        temperature: 0.8
+      };
+
+      const response = await axios.post(`${API}/opening_message`, requestData, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const openingMessage = {
+        role: 'assistant',
+        content: response.data.response,
+        personality: response.data.personality_used,
+        image: response.data.image,
+        imagePrompt: response.data.image_prompt,
+        isOpening: true, // Mark as opening message
+        timestamp: new Date().toISOString()
+      };
+
+      setConversations(prev => ({
+        ...prev,
+        [personalityId]: [openingMessage]
+      }));
+
+      setLastMessageTimes(prev => ({
+        ...prev,
+        [personalityId]: openingMessage.timestamp
+      }));
+
+      // Send notification for opening message
+      sendMessageNotification(openingMessage, personalityId);
+
+    } catch (error) {
+      console.error('Error generating opening message:', error);
+    }
+  };
+
   const getLastMessage = (personalityId) => {
     const messages = conversations[personalityId] || [];
     if (messages.length === 0) return 'No messages yet';
