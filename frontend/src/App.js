@@ -800,6 +800,32 @@ const ChatInterface = () => {
               </div>
               <div className="flex gap-2">
                 <button 
+                  onClick={toggleNotifications}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    notificationsEnabled && notificationPermission === 'granted'
+                      ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white' 
+                      : notificationsEnabled && notificationPermission === 'default'
+                      ? 'bg-yellow-500/80 hover:bg-yellow-600/80 text-white'
+                      : 'bg-gray-500/80 hover:bg-gray-600/80 text-white'
+                  }`}
+                  title={
+                    notificationPermission === 'granted' && notificationsEnabled
+                      ? 'Notifications ON - Click to disable'
+                      : notificationPermission === 'denied'
+                      ? 'Notifications blocked by browser'
+                      : notificationPermission === 'default'
+                      ? 'Click to enable notifications'
+                      : 'Notifications OFF - Click to enable'
+                  }
+                >
+                  {notificationPermission === 'granted' && notificationsEnabled
+                    ? '🔔' 
+                    : notificationPermission === 'denied'
+                    ? '🚫'
+                    : '🔕'
+                  } Notify
+                </button>
+                <button 
                   onClick={() => setProactiveEnabled(!proactiveEnabled)}
                   className={`px-4 py-2 rounded-lg transition-colors ${
                     proactiveEnabled 
