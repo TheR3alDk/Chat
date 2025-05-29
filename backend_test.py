@@ -2,14 +2,16 @@ import requests
 import json
 import time
 import sys
+import uuid
 from datetime import datetime, timedelta
 
-class NotificationAPITester:
+class PersonalityScenarioTester:
     def __init__(self, base_url="https://0e14580d-f2ad-4ec3-b289-ebef5440154e.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
         self.tests_passed = 0
+        self.custom_personality_id = f"custom_{uuid.uuid4().hex[:8]}"
 
     def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
         """Run a single API test"""
@@ -92,6 +94,53 @@ class NotificationAPITester:
             return True
         return False
 
+    def test_chat_with_scenario(self, custom_personality):
+        """Test chat completion with a custom personality that has a scenario"""
+        messages = [{"role": "user", "content": "Hello, how are you?"}]
+        
+        success, response = self.run_test(
+            "Chat with Scenario",
+            "POST",
+            "chat",
+            200,
+            data={
+                "messages": messages,
+                "personality": custom_personality["id"],
+                "custom_prompt": custom_personality["prompt"],
+                "custom_personalities": [custom_personality],
+                "is_first_message": True,
+                "max_tokens": 100,
+                "temperature": 0.7
+            }
+        )
+        
+        if success and 'response' in response:
+            print(f"Response with scenario: {response['response'][:50]}...")
+            return True
+        return False
+
+    def test_opening_message(self, custom_personality):
+        """Test generating an opening message based on scenario"""
+        success, response = self.run_test(
+            "Opening Message Generation",
+            "POST",
+            "opening_message",
+            200,
+            data={
+                "messages": [],
+                "personality": custom_personality["id"],
+                "custom_prompt": custom_personality["prompt"],
+                "custom_personalities": [custom_personality],
+                "max_tokens": 300,
+                "temperature": 0.8
+            }
+        )
+        
+        if success and 'response' in response:
+            print(f"Opening message: {response['response'][:50]}...")
+            return True
+        return False
+
     def test_proactive_message(self, personality="best_friend"):
         """Test proactive message generation"""
         success, response = self.run_test(
@@ -142,20 +191,49 @@ class NotificationAPITester:
         
         return success1 and success2
 
+    def create_test_personality_with_scenario(self):
+        """Create a test personality with scenario for testing"""
+        test_personality = {
+            "id": self.custom_personality_id,
+            "name": "Maya the Barista",
+            "description": "Friendly coffee shop owner",
+            "emoji": "☕",
+            "customImage": None,
+            "prompt": "You are Maya, a cheerful and energetic female barista who owns a small coffee shop. You're passionate about coffee, love meeting new people, and always have a warm smile. You're knowledgeable about different coffee beans and brewing methods.",
+            "scenario": "You're working behind the counter at your coffee shop on a busy morning. The user just walked in as a new customer. The cafe smells amazing with fresh coffee brewing, and you're excited to welcome them."
+        }
+        
+        print(f"\n🔍 Creating test personality with ID: {test_personality['id']}")
+        return test_personality
+
 def main():
-    print("🔔 Testing Notification System APIs 🔔")
+    print("🔔 Testing Custom Personality Scenario System 🔔")
     print(f"API URL: https://0e14580d-f2ad-4ec3-b289-ebef5440154e.preview.emergentagent.com/api")
     
-    tester = NotificationAPITester()
+    tester = PersonalityScenarioTester()
     
-    # Run tests
+    # Run basic health check
     health_ok = tester.test_health_check()
     if not health_ok:
         print("❌ Health check failed, stopping tests")
         return 1
     
+    # Get available personalities
     personalities_ok = tester.test_get_personalities()
+    
+    # Create test personality with scenario
+    test_personality = tester.create_test_personality_with_scenario()
+    
+    # Test opening message generation with scenario
+    opening_message_ok = tester.test_opening_message(test_personality)
+    
+    # Test chat with scenario context
+    chat_scenario_ok = tester.test_chat_with_scenario(test_personality)
+    
+    # Test regular chat completion
     chat_ok = tester.test_chat_completion()
+    
+    # Test proactive messaging
     proactive_ok = tester.test_proactive_message()
     should_send_ok = tester.test_should_send_proactive()
     
@@ -163,7 +241,9 @@ def main():
     print("\n📊 Test Results:")
     print(f"Health Check: {'✅' if health_ok else '❌'}")
     print(f"Get Personalities: {'✅' if personalities_ok else '❌'}")
-    print(f"Chat Completion: {'✅' if chat_ok else '❌'}")
+    print(f"Opening Message with Scenario: {'✅' if opening_message_ok else '❌'}")
+    print(f"Chat with Scenario: {'✅' if chat_scenario_ok else '❌'}")
+    print(f"Regular Chat Completion: {'✅' if chat_ok else '❌'}")
     print(f"Proactive Message: {'✅' if proactive_ok else '❌'}")
     print(f"Should Send Proactive: {'✅' if should_send_ok else '❌'}")
     
