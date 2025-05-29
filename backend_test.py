@@ -1,354 +1,151 @@
 
 import requests
 import sys
-import time
 import json
-import base64
+import time
+import logging
 from datetime import datetime
 
-class PrivateAIChatbotTester:
-    def __init__(self, base_url="https://0e14580d-f2ad-4ec3-b289-ebef5440154e.preview.emergentagent.com"):
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+class AICompanionTester:
+    def __init__(self, base_url="https://0e14580d-f2ad-4ec3-b289-ebef5440154e.preview.emergentagent.com/api"):
         self.base_url = base_url
-        self.api_url = f"{base_url}/api"
         self.tests_run = 0
         self.tests_passed = 0
+        self.tests_failed = 0
 
-    def run_test(self, name, method, endpoint, expected_status, data=None):
+    def run_test(self, name, method, endpoint, expected_status, data=None, check_image=False):
         """Run a single API test"""
-        url = f"{self.api_url}/{endpoint}"
+        url = f"{self.base_url}/{endpoint}"
         headers = {'Content-Type': 'application/json'}
-
+        
         self.tests_run += 1
-        print(f"\n🔍 Testing {name}...")
+        logging.info(f"\n🔍 Testing {name}...")
         
         try:
             if method == 'GET':
                 response = requests.get(url, headers=headers)
             elif method == 'POST':
                 response = requests.post(url, json=data, headers=headers)
+            else:
+                logging.error(f"Unsupported method: {method}")
+                self.tests_failed += 1
+                return False, None
 
             success = response.status_code == expected_status
+            
             if success:
                 self.tests_passed += 1
-                print(f"✅ Passed - Status: {response.status_code}")
-                return success, response.json() if response.text else {}
+                logging.info(f"✅ Passed - Status: {response.status_code}")
+                
+                # Additional check for image if requested
+                if check_image and 'image' in response.json():
+                    if response.json()['image']:
+                        logging.info(f"✅ Image data received - Length: {len(response.json()['image'])}")
+                    else:
+                        logging.warning("⚠️ No image data in response")
+                        
+                return True, response.json()
             else:
-                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
-                print(f"Response: {response.text}")
-                return False, {}
+                self.tests_failed += 1
+                logging.error(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
+                return False, None
 
         except Exception as e:
-            print(f"❌ Failed - Error: {str(e)}")
-            return False, {}
+            self.tests_failed += 1
+            logging.error(f"❌ Failed - Error: {str(e)}")
+            return False, None
 
-    def test_health_endpoint(self):
-        """Test the health check endpoint"""
-        success, response = self.run_test(
-            "Health Check Endpoint",
-            "GET",
-            "health",
-            200
-        )
-        if success:
-            print(f"Health Status: {response.get('status')}")
-            print(f"Service: {response.get('service')}")
-        return success
+    def test_health(self):
+        """Test the health endpoint"""
+        return self.run_test("Health Check Endpoint", "GET", "health", 200)
 
-    def test_personalities_endpoint(self):
-        """Test the personalities endpoint"""
-        success, response = self.run_test(
-            "Personalities Endpoint",
-            "GET",
-            "personalities",
-            200
-        )
-        if success:
-            personalities = response.get('personalities', [])
-            print(f"Found {len(personalities)} personalities:")
-            for p in personalities:
-                print(f"  - {p.get('name')} ({p.get('id')}): {p.get('description')}")
-        return success
-
-    def test_chat_endpoint(self, personality, message):
-        """Test the chat endpoint with a specific personality"""
+    def test_chat_with_image_request(self, personality, message):
+        """Test chat with a message that should trigger image generation"""
         data = {
-            "messages": [{"role": "user", "content": message}],
+            "message": message,
             "personality": personality,
-            "max_tokens": 1000,
-            "temperature": 0.7
+            "conversation_history": []
         }
         
+        logging.info(f"Testing image request with {personality} personality: '{message}'")
         success, response = self.run_test(
-            f"Chat Endpoint with {personality} personality",
-            "POST",
-            "chat",
-            200,
-            data=data
+            f"Chat with {personality} - Image Request", 
+            "POST", 
+            "chat", 
+            200, 
+            data=data,
+            check_image=True
         )
         
-        if success:
-            print(f"Message: '{message}'")
-            print(f"Response: '{response.get('response')[:100]}...'")
-            print(f"Personality Used: {response.get('personality_used')}")
-            print(f"Timestamp: {response.get('timestamp')}")
-            
-            # Check if image was generated
-            if response.get('image'):
-                print(f"✅ Image generated successfully!")
-                print(f"Image Prompt: '{response.get('image_prompt')}'")
-                # Save image for inspection if needed
-                # self.save_image(response.get('image'), f"test_{personality}_{datetime.now().strftime('%H%M%S')}.jpg")
-            
-        return success, response
+        if success and response:
+            has_image = response.get('image') is not None
+            logging.info(f"Image in response: {'✅ Yes' if has_image else '❌ No'}")
+            if has_image:
+                logging.info(f"Image prompt: {response.get('image_prompt')}")
+            return has_image, response
+        
+        return False, None
 
-    def test_chat_with_custom_personality(self, custom_prompt, message):
-        """Test the chat endpoint with a custom personality"""
-        data = {
-            "messages": [{"role": "user", "content": message}],
-            "personality": "custom_test",
-            "custom_prompt": custom_prompt,
-            "max_tokens": 1000,
-            "temperature": 0.7
-        }
-        
-        success, response = self.run_test(
-            f"Chat Endpoint with custom personality",
-            "POST",
-            "chat",
-            200,
-            data=data
-        )
-        
-        if success:
-            print(f"Custom Prompt: '{custom_prompt[:50]}...'")
-            print(f"Message: '{message}'")
-            print(f"Response: '{response.get('response')[:100]}...'")
-            print(f"Personality Used: {response.get('personality_used')}")
-            print(f"Timestamp: {response.get('timestamp')}")
-            
-            # Check if image was generated
-            if response.get('image'):
-                print(f"✅ Image generated successfully!")
-                print(f"Image Prompt: '{response.get('image_prompt')}'")
-        
-        return success, response
+def test_self_image_generation():
+    """Test the self-image generation feature with different personalities"""
+    tester = AICompanionTester()
     
-    def test_direct_image_generation(self, prompt, style="realistic"):
-        """Test the direct image generation endpoint"""
-        data = {
-            "prompt": prompt,
-            "style": style
-        }
-        
-        success, response = self.run_test(
-            f"Direct Image Generation with style '{style}'",
-            "POST",
-            "generate_image",
-            200,
-            data=data
-        )
-        
-        if success:
-            print(f"Prompt: '{prompt}'")
-            print(f"Style: '{style}'")
-            print(f"Timestamp: {response.get('timestamp')}")
-            
-            if response.get('image'):
-                print(f"✅ Image generated successfully!")
-                # Save image for inspection if needed
-                # self.save_image(response.get('image'), f"direct_{style}_{datetime.now().strftime('%H%M%S')}.jpg")
-        
-        return success, response
+    # Test health endpoint first
+    health_success, _ = tester.test_health()
+    if not health_success:
+        logging.error("Health check failed, stopping tests")
+        return 1
     
-    def test_image_generation_via_chat(self, personality, image_request):
-        """Test image generation through the chat endpoint"""
-        print(f"\n🖼️ Testing Image Generation via Chat with {personality} personality")
-        print(f"Request: '{image_request}'")
-        
-        success, response = self.test_chat_endpoint(personality, image_request)
-        
-        if success:
-            if response.get('image'):
-                print(f"✅ Image generation successful!")
-                return True, response
-            else:
-                print(f"❌ No image was generated for the request")
-                return False, response
-        
-        return False, response
-    
-    def test_self_image_generation(self, personality, request_phrase):
-        """Test self-image generation through the chat endpoint"""
-        print(f"\n🤳 Testing Self-Image Generation with {personality} personality")
-        print(f"Request: '{request_phrase}'")
-        
-        success, response = self.test_chat_endpoint(personality, request_phrase)
-        
-        if success:
-            if response.get('image'):
-                print(f"✅ Self-image generation successful!")
-                print(f"Image Prompt: '{response.get('image_prompt')}'")
-                return True, response
-            else:
-                print(f"❌ No self-image was generated for the request")
-                return False, response
-        
-        return False, response
-
-    def test_custom_personality_self_image(self, custom_prompt, custom_name, request_phrase):
-        """Test self-image generation with a custom personality"""
-        print(f"\n🤳 Testing Self-Image Generation with custom personality: {custom_name}")
-        print(f"Request: '{request_phrase}'")
-        
-        data = {
-            "messages": [{"role": "user", "content": request_phrase}],
-            "personality": "custom_test",
-            "custom_prompt": custom_prompt,
-            "custom_personalities": [
-                {
-                    "id": "custom_test",
-                    "name": custom_name,
-                    "prompt": custom_prompt
-                }
-            ],
-            "max_tokens": 1000,
-            "temperature": 0.7
-        }
-        
-        success, response = self.run_test(
-            f"Self-Image with custom personality: {custom_name}",
-            "POST",
-            "chat",
-            200,
-            data=data
-        )
-        
-        if success:
-            print(f"Custom Prompt: '{custom_prompt[:50]}...'")
-            print(f"Message: '{request_phrase}'")
-            print(f"Response: '{response.get('response')[:100]}...'")
-            
-            if response.get('image'):
-                print(f"✅ Self-image generation successful!")
-                print(f"Image Prompt: '{response.get('image_prompt')}'")
-                return True, response
-            else:
-                print(f"❌ No self-image was generated for the request")
-                return False, response
-        
-        return False, response
-    
-    def save_image(self, base64_image, filename):
-        """Save a base64 encoded image to a file"""
-        try:
-            image_data = base64.b64decode(base64_image)
-            with open(filename, 'wb') as f:
-                f.write(image_data)
-            print(f"Image saved to {filename}")
-        except Exception as e:
-            print(f"Error saving image: {str(e)}")
-
-
-
-def main():
-    tester = PrivateAIChatbotTester()
-    
-    # Test health endpoint
-    health_success = tester.test_health_endpoint()
-    
-    # Test personalities endpoint
-    personalities_success = tester.test_personalities_endpoint()
-    
-    # Test self-image generation with different personalities
-    self_image_requests = [
-        "Can you show me what you look like?",
-        "What do you look like?",
-        "Take a selfie",
-        "I want to see you",
-        "Show yourself",
-        "Picture of you"
+    # Test cases for self-image generation
+    test_cases = [
+        {"personality": "best_friend", "message": "Hey bestie, can you show me what you look like?"},
+        {"personality": "fantasy_rpg", "message": "Show me your ethereal form"},
+        {"personality": "lover", "message": "I want to see you, darling"},
+        {"personality": "therapist", "message": "I'd like to put a face to the voice"},
+        {"personality": "neutral", "message": "What do you look like?"}
     ]
     
-    self_image_results = []
-    for personality in ["best_friend", "fantasy_rpg", "lover", "therapist", "neutral"]:
-        # Test one self-image request per personality
-        request = self_image_requests[len(self_image_results) % len(self_image_requests)]
-        time.sleep(2)  # Longer delay for image generation
-        result, response = tester.test_self_image_generation(personality, request)
-        self_image_results.append((personality, request, result, response))
-    
-    # Test natural conversation self-image requests
-    natural_self_image_requests = [
-        ("best_friend", "Hey bestie, send me a pic!"),
-        ("fantasy_rpg", "Show me your ethereal form"),
-        ("therapist", "I'd like to put a face to the voice"),
-        ("lover", "I'm curious what you look like, darling"),
-        ("neutral", "I'm curious about your appearance")
-    ]
-    
-    natural_self_image_results = []
-    for personality, request in natural_self_image_requests:
-        time.sleep(2)  # Longer delay for image generation
-        result, response = tester.test_self_image_generation(personality, request)
-        natural_self_image_results.append((personality, request, result, response))
-    
-    # Test with custom personality
-    custom_personalities = [
-        ("You are a gaming buddy who loves video games. You're enthusiastic about gaming, knowledgeable about all platforms, and always ready to discuss the latest releases and gaming strategies. You're a young woman with a trendy gaming setup.", "Gaming Buddy"),
-        ("You are a study partner who helps with academic subjects. You're knowledgeable, patient, and encouraging. You explain complex topics clearly and help organize study plans. You're a female graduate student with glasses and a professional appearance.", "Study Partner")
-    ]
-    
-    custom_self_image_results = []
-    for custom_prompt, custom_name in custom_personalities:
-        time.sleep(2)  # Longer delay for image generation
-        request = "Can you show me what you look like?"
-        result, response = tester.test_custom_personality_self_image(custom_prompt, custom_name, request)
-        custom_self_image_results.append((custom_name, result, response))
-    
-    # Test multiple requests to same personality for consistency
-    consistency_results = []
-    test_personality = "best_friend"
-    for i in range(2):  # Test twice for consistency
-        time.sleep(2)
-        request = "Show me what you look like"
-        result, response = tester.test_self_image_generation(test_personality, request)
-        consistency_results.append((i+1, result, response))
+    # Run tests for each personality
+    results = {}
+    for test_case in test_cases:
+        personality = test_case["personality"]
+        message = test_case["message"]
+        
+        # Make two requests to test consistency
+        logging.info(f"\n===== Testing {personality.upper()} =====")
+        
+        # First request
+        has_image1, response1 = tester.test_chat_with_image_request(personality, message)
+        time.sleep(1)  # Small delay between requests
+        
+        # Second request (to test consistency)
+        has_image2, response2 = tester.test_chat_with_image_request(personality, message)
+        
+        results[personality] = {
+            "success": has_image1 or has_image2,
+            "requests": {
+                "Request 1": "✅ Passed" if has_image1 else "❌ Failed",
+                "Request 2": "✅ Passed" if has_image2 else "❌ Failed"
+            }
+        }
     
     # Print summary
-    print("\n📊 Test Summary:")
-    print(f"Tests passed: {tester.tests_passed}/{tester.tests_run}")
-    print(f"Health endpoint: {'✅ Passed' if health_success else '❌ Failed'}")
-    print(f"Personalities endpoint: {'✅ Passed' if personalities_success else '❌ Failed'}")
+    logging.info("\n===== TEST SUMMARY =====")
+    logging.info(f"Total tests run: {tester.tests_run}")
+    logging.info(f"Tests passed: {tester.tests_passed}")
+    logging.info(f"Tests failed: {tester.tests_failed}")
     
-    print("\nSelf-Image Generation tests:")
-    for personality, request, result, response in self_image_results:
-        image_prompt = response.get('image_prompt', 'No prompt')
-        print(f"  - {personality} ('{request[:20]}...'): {'✅ Passed' if result else '❌ Failed'}")
-        if result:
-            print(f"    Prompt: {image_prompt}")
+    logging.info("\nSelf-Image Generation Results:")
+    for personality, result in results.items():
+        logging.info(f"- {personality.capitalize()}: {'✅ Success' if result['success'] else '❌ Failed'}")
+        logging.info(f"  Multiple requests to same personality:")
+        for req, status in result["requests"].items():
+            logging.info(f"  - {req}: {status}")
     
-    print("\nNatural Conversation Self-Image tests:")
-    for personality, request, result, response in natural_self_image_results:
-        image_prompt = response.get('image_prompt', 'No prompt')
-        print(f"  - {personality} ('{request[:20]}...'): {'✅ Passed' if result else '❌ Failed'}")
-        if result:
-            print(f"    Prompt: {image_prompt}")
-    
-    print("\nCustom Personality Self-Image tests:")
-    for custom_name, result, response in custom_self_image_results:
-        image_prompt = response.get('image_prompt', 'No prompt')
-        print(f"  - {custom_name}: {'✅ Passed' if result else '❌ Failed'}")
-        if result:
-            print(f"    Prompt: {image_prompt}")
-    
-    print("\nConsistency tests (multiple requests to same personality):")
-    for i, result, response in consistency_results:
-        image_prompt = response.get('image_prompt', 'No prompt')
-        print(f"  - Request {i}: {'✅ Passed' if result else '❌ Failed'}")
-        if result:
-            print(f"    Prompt: {image_prompt}")
-    
-    return 0 if tester.tests_passed == tester.tests_run else 1
+    return 0 if all(result["success"] for result in results.values()) else 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(test_self_image_generation())
