@@ -716,7 +716,9 @@ const ChatInterface = () => {
 
   const getPersonalityImage = (personalityId) => {
     const customPersonality = customPersonalities.find(p => p.id === personalityId);
-    return customPersonality?.customImage || null;
+    const image = customPersonality?.customImage || null;
+    console.log('Getting personality image for', personalityId, ':', !!image); // Debug log
+    return image;
   };
 
   const PersonalityAvatar = ({ personalityId, size = "small" }) => {
