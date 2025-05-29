@@ -1720,7 +1720,7 @@ const ChatInterface = () => {
     const currentMessages = conversations[currentPersonality] || [];
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      <div className="min-h-screen bg-black">
         <div className="container mx-auto max-w-4xl h-screen flex flex-col">
           {/* Header */}
           <div className="bg-white/10 backdrop-blur-md border-b border-white/20 p-4">
