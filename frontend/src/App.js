@@ -590,7 +590,9 @@ const ChatInterface = () => {
                     <span></span>
                     <span></span>
                   </div>
-                  <span className="text-sm text-gray-500">Thinking...</span>
+                  <span className="text-sm text-gray-500">
+                    {isGeneratingImage ? 'Creating your image... 🎨' : 'Thinking...'}
+                  </span>
                 </div>
               </div>
             </div>
