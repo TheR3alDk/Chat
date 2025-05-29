@@ -263,16 +263,38 @@ const ChatInterface = () => {
   useEffect(() => {
     loadPersonalities();
     loadCustomPersonalities();
+    requestNotificationPermission();
     const savedMessages = localStorage.getItem('chatMessages');
     if (savedMessages) {
       setMessages(JSON.parse(savedMessages));
     }
+    const savedLastMessageTime = localStorage.getItem('lastMessageTime');
+    if (savedLastMessageTime) {
+      setLastMessageTime(savedLastMessageTime);
+    }
   }, []);
 
-  // Save messages to localStorage whenever messages change
+  // Start proactive messaging when personality changes or when enabled
+  useEffect(() => {
+    startProactiveMessaging();
+    return () => {
+      if (proactiveTimerRef.current) {
+        clearInterval(proactiveTimerRef.current);
+      }
+    };
+  }, [personality, proactiveEnabled, lastMessageTime]);
+
+  // Save messages and update last message time whenever messages change
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem('chatMessages', JSON.stringify(messages));
+      // Update last message time when user sends a message
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'user' || lastMessage.role === 'assistant') {
+        const timestamp = lastMessage.timestamp || new Date().toISOString();
+        setLastMessageTime(timestamp);
+        localStorage.setItem('lastMessageTime', timestamp);
+      }
     }
   }, [messages]);
 
