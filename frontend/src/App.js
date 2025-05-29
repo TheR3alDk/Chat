@@ -609,14 +609,8 @@ const ChatInterface = () => {
       setMessages(prevMessages => [...prevMessages, proactiveMessage]);
       setLastMessageTime(proactiveMessage.timestamp);
       
-      // Show notification if page is not visible
-      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-        const personalityDisplay = getPersonalityDisplay(personality);
-        new Notification(`New message from ${personalityDisplay}`, {
-          body: response.data.response.substring(0, 100) + '...',
-          icon: '/favicon.ico'
-        });
-      }
+      // Send notification for proactive message
+      sendMessageNotification(proactiveMessage, proactiveMessage.personality);
 
     } catch (error) {
       console.error('Error sending proactive message:', error);
