@@ -533,7 +533,7 @@ const ProfilePage = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
           </div>
         ) : customPersonalities.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {customPersonalities.map((personality) => (
               <div 
                 key={personality.id} 
