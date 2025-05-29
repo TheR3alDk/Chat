@@ -240,6 +240,7 @@ const ChatInterface = () => {
   const [input, setInput] = useState('');
   const [personality, setPersonality] = useState('best_friend');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [error, setError] = useState(null);
   const [personalities, setPersonalities] = useState([]);
   const [customPersonalities, setCustomPersonalities] = useState([]);
