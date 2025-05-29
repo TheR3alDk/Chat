@@ -85,11 +85,14 @@ async def chat_completion(
     chat_request: ChatRequest
 ):
     try:
-        # Get system prompt based on personality
-        system_prompt = PERSONALITY_PROMPTS.get(
-            chat_request.personality, 
-            PERSONALITY_PROMPTS["neutral"]
-        )
+        # Use custom prompt if provided, otherwise use built-in personality
+        if chat_request.custom_prompt:
+            system_prompt = chat_request.custom_prompt
+        else:
+            system_prompt = PERSONALITY_PROMPTS.get(
+                chat_request.personality, 
+                PERSONALITY_PROMPTS["neutral"]
+            )
         
         # Prepare messages for SambaNova API
         messages = [{"role": "system", "content": system_prompt}]
