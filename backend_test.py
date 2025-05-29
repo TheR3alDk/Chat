@@ -92,6 +92,33 @@ class PrivateAIChatbotTester:
         
         return success
 
+def test_chat_with_custom_personality(self, custom_prompt, message):
+        """Test the chat endpoint with a custom personality"""
+        data = {
+            "messages": [{"role": "user", "content": message}],
+            "personality": "custom_test",
+            "custom_prompt": custom_prompt,
+            "max_tokens": 1000,
+            "temperature": 0.7
+        }
+        
+        success, response = self.run_test(
+            f"Chat Endpoint with custom personality",
+            "POST",
+            "chat",
+            200,
+            data=data
+        )
+        
+        if success:
+            print(f"Custom Prompt: '{custom_prompt[:50]}...'")
+            print(f"Message: '{message}'")
+            print(f"Response: '{response.get('response')[:100]}...'")
+            print(f"Personality Used: {response.get('personality_used')}")
+            print(f"Timestamp: {response.get('timestamp')}")
+        
+        return success
+
 def main():
     tester = PrivateAIChatbotTester()
     
@@ -117,6 +144,12 @@ def main():
         result = tester.test_chat_endpoint(personality, message)
         chat_results.append((personality, result))
     
+    # Test with custom personality
+    custom_prompt = "You are a gaming buddy who loves video games. You're enthusiastic about gaming, knowledgeable about all platforms, and always ready to discuss the latest releases and gaming strategies."
+    custom_message = "What games would you recommend for someone who likes strategy games?"
+    time.sleep(1)
+    custom_result = tester.test_chat_with_custom_personality(custom_prompt, custom_message)
+    
     # Print summary
     print("\n📊 Test Summary:")
     print(f"Tests passed: {tester.tests_passed}/{tester.tests_run}")
@@ -126,6 +159,7 @@ def main():
     print("\nChat endpoint tests:")
     for personality, result in chat_results:
         print(f"  - {personality}: {'✅ Passed' if result else '❌ Failed'}")
+    print(f"  - Custom personality: {'✅ Passed' if custom_result else '❌ Failed'}")
     
     return 0 if tester.tests_passed == tester.tests_run else 1
 
