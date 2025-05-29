@@ -683,6 +683,15 @@ const ChatInterface = () => {
                 >
                   {proactiveEnabled ? '🔔' : '🔕'} Auto
                 </button>
+                {proactiveEnabled && (
+                  <button 
+                    onClick={triggerProactiveMessage}
+                    className="bg-purple-500/80 hover:bg-purple-600/80 text-white px-4 py-2 rounded-lg transition-colors"
+                    title="Trigger proactive message now (for testing)"
+                  >
+                    💬 Test
+                  </button>
+                )}
                 <button 
                   onClick={() => {
                     setEditingPersonality(null);
