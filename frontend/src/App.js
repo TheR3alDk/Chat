@@ -1748,7 +1748,8 @@ const ChatInterface = () => {
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div>
+                <div className="flex gap-2">
                 <button 
                   onClick={toggleNotifications}
                   className={`px-3 py-2 rounded-lg transition-colors text-sm ${
