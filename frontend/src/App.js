@@ -868,6 +868,11 @@ const ChatInterface = () => {
 
 
 
+  const triggerProactiveMessage = async () => {
+    console.log('Manually triggering proactive message');
+    await sendProactiveMessage();
+  };
+
   const getLastMessage = (personalityId) => {
     const messages = conversations[personalityId] || [];
     if (messages.length === 0) return 'No messages yet';
