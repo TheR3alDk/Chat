@@ -119,3 +119,21 @@
     min-height: 44px;
   }
 }
+
+/* Mobile Bottom Navigation */
+.mobile-bottom-nav {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 50 !important;
+}
+
+@media (min-width: 768px) {
+  .mobile-bottom-nav {
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+  }
+}
