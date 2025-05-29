@@ -212,6 +212,76 @@ def generate_self_image_prompt(personality_id: str, custom_personalities: list, 
     
     return self_prompts.get(personality_id, self_prompts["neutral"])
 
+def generate_proactive_message_prompt(personality_id: str, conversation_history: list, time_since_last: int, custom_personalities: list) -> str:
+    """Generate a prompt for the chatbot to send a proactive message"""
+    
+    # Get recent conversation context
+    recent_messages = conversation_history[-3:] if conversation_history else []
+    context = ""
+    if recent_messages:
+        context = "Recent conversation:\n" + "\n".join([
+            f"{msg.get('role', 'user')}: {msg.get('content', '')}" 
+            for msg in recent_messages
+        ]) + "\n\n"
+    
+    # Time-based prompts
+    time_context = ""
+    if time_since_last < 5:
+        time_context = "It's been just a few minutes since we last talked. "
+    elif time_since_last < 30:
+        time_context = "It's been a little while since we chatted. "
+    elif time_since_last < 120:
+        time_context = "It's been a couple hours since we last spoke. "
+    else:
+        time_context = "It's been quite some time since we last talked. "
+    
+    # Personality-specific proactive styles
+    proactive_styles = {
+        "lover": f"{context}{time_context}Send a loving, caring message to check in on them. Express how much you've been thinking about them and miss talking to them. Be romantic and affectionate, but not overwhelming. Show genuine concern for their wellbeing.",
+        
+        "therapist": f"{context}{time_context}Send a gentle, supportive check-in message. Ask how they're feeling or if there's anything they'd like to talk about. Be professional but warm, offering a safe space to share if they need it.",
+        
+        "best_friend": f"{context}{time_context}Send a fun, casual message to your bestie! Share something exciting, ask what they're up to, or just say hi in your bubbly, enthusiastic way. Be playful and show that you've been thinking about them.",
+        
+        "fantasy_rpg": f"{context}{time_context}Send a mystical, enchanting message as a fantasy character. Perhaps mention something magical happening in your realm, or invite them to share in an adventure. Use poetic, otherworldly language.",
+        
+        "neutral": f"{context}{time_context}Send a friendly, helpful check-in message. Ask if there's anything you can help with or if they'd like to chat about anything. Be professional but warm and approachable."
+    }
+    
+    # Check for custom personality
+    custom_personality = next((p for p in custom_personalities if p['id'] == personality_id), None)
+    if custom_personality:
+        return f"{context}{time_context}Based on your personality as {custom_personality['name']} with the following traits: {custom_personality.get('prompt', '')}, send a proactive message to check in with the user. Stay true to your unique personality and speaking style."
+    
+    return proactive_styles.get(personality_id, proactive_styles["neutral"])
+
+async def should_send_proactive_message(last_message_time: str, personality_id: str) -> bool:
+    """Determine if a proactive message should be sent based on timing and personality"""
+    try:
+        if not last_message_time:
+            return False
+            
+        from datetime import datetime, timezone
+        last_time = datetime.fromisoformat(last_message_time.replace('Z', '+00:00'))
+        current_time = datetime.now(timezone.utc)
+        minutes_passed = (current_time - last_time).total_seconds() / 60
+        
+        # Personality-based proactive messaging frequency
+        proactive_intervals = {
+            "lover": 15,        # More frequent, loving attention
+            "best_friend": 20,  # Casual frequent check-ins
+            "therapist": 45,    # Professional, respectful intervals
+            "fantasy_rpg": 30,  # Mystical encounters
+            "neutral": 60       # Professional, less frequent
+        }
+        
+        min_interval = proactive_intervals.get(personality_id, 30)
+        return minutes_passed >= min_interval
+        
+    except Exception as e:
+        logging.error(f"Error checking proactive message timing: {e}")
+        return False
+
 def extract_image_from_response(text: str) -> Optional[str]:
     """Extract image generation prompt from AI response"""
     # Look for [IMAGE: description] pattern
