@@ -857,6 +857,50 @@ async def get_user_personalities(creator_id: str):
             detail=f"Failed to get user personalities: {str(e)}"
         )
 
+@api_router.get("/personalities/tags")
+async def get_available_tags():
+    """Get all available tags and their usage counts"""
+    try:
+        collection = db.public_personalities
+        
+        # Aggregate tags from all public personalities
+        pipeline = [
+            {"$match": {"is_public": True}},
+            {"$unwind": "$tags"},
+            {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}},
+            {"$limit": 50}
+        ]
+        
+        result = await collection.aggregate(pipeline).to_list(length=50)
+        
+        tags = [{"tag": item["_id"], "count": item["count"]} for item in result]
+        
+        # Predefined categories for better organization
+        predefined_categories = [
+            {"category": "Relationship", "tags": ["romantic", "friend", "companion", "dating"]},
+            {"category": "Professional", "tags": ["work", "business", "assistant", "mentor"]},
+            {"category": "Entertainment", "tags": ["gaming", "fun", "comedy", "roleplay"]},
+            {"category": "Education", "tags": ["study", "tutor", "learning", "academic"]},
+            {"category": "Wellness", "tags": ["therapy", "support", "fitness", "health"]},
+            {"category": "Creative", "tags": ["art", "writing", "music", "creative"]},
+            {"category": "Fantasy", "tags": ["fantasy", "anime", "fictional", "magic"]},
+            {"category": "Lifestyle", "tags": ["travel", "food", "fashion", "lifestyle"]}
+        ]
+        
+        return {
+            "popular_tags": tags,
+            "categories": predefined_categories,
+            "total_personalities": await collection.count_documents({"is_public": True})
+        }
+        
+    except Exception as e:
+        logging.error(f"Error getting tags: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get tags: {str(e)}"
+        )
+
 @api_router.delete("/personalities/public/{personality_id}")
 async def delete_public_personality(personality_id: str, creator_id: str):
     """Delete a public personality (only by creator)"""
