@@ -714,6 +714,153 @@ async def generate_image(
             detail=f"Image generation error: {str(e)}"
         )
 
+@api_router.post("/personalities/public")
+async def create_public_personality(personality: PublicPersonality):
+    """Create or update a public personality"""
+    try:
+        # Generate unique ID if not provided
+        if not personality.id:
+            personality.id = f"public_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{personality.creator_id[:8]}"
+        
+        # Add timestamp
+        personality.created_at = datetime.utcnow().isoformat()
+        
+        # Store in MongoDB
+        collection = db.public_personalities
+        result = await collection.replace_one(
+            {"id": personality.id},
+            personality.dict(),
+            upsert=True
+        )
+        
+        return {
+            "success": True,
+            "personality_id": personality.id,
+            "message": "Public personality created successfully"
+        }
+        
+    except Exception as e:
+        logging.error(f"Error creating public personality: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create public personality: {str(e)}"
+        )
+
+@api_router.get("/personalities/public")
+async def get_public_personalities(limit: int = 50, offset: int = 0, tags: str = None):
+    """Get list of public personalities"""
+    try:
+        collection = db.public_personalities
+        query = {"is_public": True}
+        
+        # Filter by tags if provided
+        if tags:
+            tag_list = [tag.strip() for tag in tags.split(",")]
+            query["tags"] = {"$in": tag_list}
+        
+        # Get personalities with pagination
+        cursor = collection.find(query).sort("usage_count", -1).skip(offset).limit(limit)
+        personalities = await cursor.to_list(length=limit)
+        
+        # Convert ObjectId to string for JSON serialization
+        for personality in personalities:
+            if "_id" in personality:
+                del personality["_id"]
+        
+        return {
+            "personalities": personalities,
+            "total": await collection.count_documents(query)
+        }
+        
+    except Exception as e:
+        logging.error(f"Error getting public personalities: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get public personalities: {str(e)}"
+        )
+
+@api_router.get("/personalities/public/{personality_id}")
+async def get_public_personality(personality_id: str):
+    """Get a specific public personality"""
+    try:
+        collection = db.public_personalities
+        personality = await collection.find_one({"id": personality_id, "is_public": True})
+        
+        if not personality:
+            raise HTTPException(status_code=404, detail="Public personality not found")
+        
+        # Remove MongoDB ObjectId
+        if "_id" in personality:
+            del personality["_id"]
+        
+        # Increment usage count
+        await collection.update_one(
+            {"id": personality_id},
+            {"$inc": {"usage_count": 1}}
+        )
+        
+        return personality
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error getting public personality: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get public personality: {str(e)}"
+        )
+
+@api_router.get("/personalities/user/{creator_id}")
+async def get_user_personalities(creator_id: str):
+    """Get all personalities created by a specific user"""
+    try:
+        collection = db.public_personalities
+        personalities = await collection.find({"creator_id": creator_id}).to_list(length=100)
+        
+        # Convert ObjectId to string
+        for personality in personalities:
+            if "_id" in personality:
+                del personality["_id"]
+        
+        return {
+            "personalities": personalities,
+            "total": len(personalities)
+        }
+        
+    except Exception as e:
+        logging.error(f"Error getting user personalities: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get user personalities: {str(e)}"
+        )
+
+@api_router.delete("/personalities/public/{personality_id}")
+async def delete_public_personality(personality_id: str, creator_id: str):
+    """Delete a public personality (only by creator)"""
+    try:
+        collection = db.public_personalities
+        result = await collection.delete_one({
+            "id": personality_id,
+            "creator_id": creator_id
+        })
+        
+        if result.deleted_count == 0:
+            raise HTTPException(
+                status_code=404, 
+                detail="Personality not found or you don't have permission to delete it"
+            )
+        
+        return {"success": True, "message": "Personality deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting public personality: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete public personality: {str(e)}"
+        )
+
 @api_router.get("/personalities")
 async def get_personalities():
     """Get available personality types"""
