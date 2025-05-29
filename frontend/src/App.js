@@ -1731,10 +1731,11 @@ const ChatInterface = () => {
     </div>
   );
 
-  // Individual Chat Page Component
+  // Individual Chat Page Component with Simplified Interface
   const ChatPage = () => {
     const currentMessages = conversations[currentPersonality] || [];
     const currentPersonalityImage = getPersonalityImage(currentPersonality);
+    const [showDropdown, setShowDropdown] = useState(false);
     
     return (
       <div 
