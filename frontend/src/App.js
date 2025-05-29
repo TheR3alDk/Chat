@@ -347,6 +347,16 @@ const ChatInterface = () => {
         requestData.custom_prompt = customPersonality.prompt;
       }
 
+      // Check if user is requesting an image
+      const imageKeywords = ['create', 'generate', 'make', 'draw', 'show', 'picture', 'image', 'photo'];
+      const hasImageRequest = imageKeywords.some(keyword => 
+        input.toLowerCase().includes(keyword)
+      );
+
+      if (hasImageRequest) {
+        setIsGeneratingImage(true);
+      }
+
       const response = await axios.post(`${API}/chat`, requestData, {
         headers: { 'Content-Type': 'application/json' }
       });
