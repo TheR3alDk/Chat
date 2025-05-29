@@ -208,11 +208,27 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
                 value={formData.prompt}
                 onChange={(e) => setFormData({...formData, prompt: e.target.value})}
                 placeholder="Describe how this AI personality should behave, speak, and interact. Be specific about traits, tone, and characteristics..."
-                rows="6"
+                rows="4"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Tip: Include details about gender, speaking style, interests, and how they should respond to users.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Conversation Scenario (Optional)
+              </label>
+              <textarea
+                value={formData.scenario}
+                onChange={(e) => setFormData({...formData, scenario: e.target.value})}
+                placeholder="Set up a scenario or backstory for how conversations should start. For example: 'You are at a coffee shop and just met the user' or 'You are childhood friends reuniting after years'..."
+                rows="3"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                This scenario will influence how the AI starts conversations and provides context for interactions.
               </p>
             </div>
           </div>
