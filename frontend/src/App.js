@@ -398,7 +398,8 @@ const ChatInterface = () => {
         content: response.data.response,
         personality: response.data.personality_used,
         image: response.data.image,
-        imagePrompt: response.data.image_prompt
+        imagePrompt: response.data.image_prompt,
+        timestamp: new Date().toISOString()
       };
 
       // Debug logging
