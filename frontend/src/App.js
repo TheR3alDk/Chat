@@ -348,13 +348,19 @@ const ChatInterface = () => {
         requestData.custom_prompt = customPersonality.prompt;
       }
 
-      // Check if user is requesting an image
+      // Check if user is requesting an image (including self-images)
       const imageKeywords = ['create', 'generate', 'make', 'draw', 'show', 'picture', 'image', 'photo'];
+      const selfImageKeywords = ['look like', 'selfie', 'yourself', 'what you look', 'see you', 'picture of you', 'image of you'];
+      
       const hasImageRequest = imageKeywords.some(keyword => 
         input.toLowerCase().includes(keyword)
       );
+      
+      const hasSelfImageRequest = selfImageKeywords.some(keyword => 
+        input.toLowerCase().includes(keyword)
+      );
 
-      if (hasImageRequest) {
+      if (hasImageRequest || hasSelfImageRequest) {
         setIsGeneratingImage(true);
       }
 
