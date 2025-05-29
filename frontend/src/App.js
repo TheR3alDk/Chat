@@ -1586,7 +1586,7 @@ const ChatInterface = () => {
         </div>
 
         {/* Companions Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Built-in Personalities */}
           {personalities.map((p) => (
             <div key={p.id} className="group">
