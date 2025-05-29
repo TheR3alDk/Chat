@@ -541,9 +541,11 @@ const ChatInterface = () => {
   };
 
   const sendProactiveMessage = async () => {
-    if (!proactiveEnabled) return;
+    if (!proactiveEnabled || !personality) return;
     
     try {
+      console.log('Generating proactive message for', personality);
+      
       const customPersonality = customPersonalities.find(p => p.id === personality);
       
       const requestData = {
@@ -572,6 +574,8 @@ const ChatInterface = () => {
         timestamp: new Date().toISOString()
       };
 
+      console.log('Proactive message generated:', proactiveMessage.content.substring(0, 50) + '...');
+      
       setMessages(prevMessages => [...prevMessages, proactiveMessage]);
       setLastMessageTime(proactiveMessage.timestamp);
       
@@ -587,6 +591,11 @@ const ChatInterface = () => {
     } catch (error) {
       console.error('Error sending proactive message:', error);
     }
+  };
+
+  const triggerProactiveMessage = async () => {
+    console.log('Manually triggering proactive message');
+    await sendProactiveMessage();
   };
 
   const requestNotificationPermission = async () => {
