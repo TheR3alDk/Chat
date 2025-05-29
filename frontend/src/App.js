@@ -449,7 +449,10 @@ const ChatInterface = () => {
         console.log('No image in response');
       }
 
-      setMessages([...newMessages, assistantMessage]);
+      setConversations(prev => ({
+        ...prev,
+        [currentPersonality]: [...newMessages, assistantMessage]
+      }));
       
       // Send notification for regular chat response
       sendMessageNotification(assistantMessage.content, assistantMessage.personality);
