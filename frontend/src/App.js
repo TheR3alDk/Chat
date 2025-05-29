@@ -779,12 +779,13 @@ const ChatInterface = () => {
               <div className="flex items-center gap-2">
                 <label className="text-white font-medium">Personality:</label>
                 <div className="flex items-center gap-2">
-                  <PersonalityAvatar personalityId={personality} size="medium" />
+                  <PersonalityAvatar personalityId={currentPersonality} size="medium" />
                   <select 
-                    value={personality} 
-                    onChange={(e) => setPersonality(e.target.value)}
+                    value={currentPersonality || ''} 
+                    onChange={(e) => setCurrentPersonality(e.target.value)}
                     className="bg-white/20 backdrop-blur-md text-white border border-white/30 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
+                    <option value="">Select a personality</option>
                     <optgroup label="Built-in Personalities" className="bg-gray-800">
                       {personalities.map((p) => (
                         <option key={p.id} value={p.id} className="bg-gray-800">
@@ -802,11 +803,11 @@ const ChatInterface = () => {
                       </optgroup>
                     )}
                   </select>
-                  {isCustomPersonality(personality) && (
+                  {isCustomPersonality(currentPersonality) && (
                     <div className="flex gap-1">
                       <button
                         onClick={() => {
-                          const p = customPersonalities.find(p => p.id === personality);
+                          const p = customPersonalities.find(p => p.id === currentPersonality);
                           setEditingPersonality(p);
                           setShowCreator(true);
                         }}
@@ -816,7 +817,7 @@ const ChatInterface = () => {
                         ✏️
                       </button>
                       <button
-                        onClick={() => handleDeletePersonality(personality)}
+                        onClick={() => handleDeletePersonality(currentPersonality)}
                         className="bg-red-500/80 hover:bg-red-600/80 text-white p-2 rounded-lg transition-colors"
                         title="Delete personality"
                       >
