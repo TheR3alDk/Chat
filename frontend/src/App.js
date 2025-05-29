@@ -436,6 +436,9 @@ const ChatInterface = () => {
       }
 
       setMessages([...newMessages, assistantMessage]);
+      
+      // Send notification for regular chat response
+      sendMessageNotification(assistantMessage.content, assistantMessage.personality);
     } catch (err) {
       setError(
         err.response?.data?.detail || 
