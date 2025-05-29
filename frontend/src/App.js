@@ -466,8 +466,85 @@ const ChatInterface = () => {
     return <span className="text-lg">{emoji}</span>;
   };
 
-  const isCustomPersonality = (personalityId) => {
-    return customPersonalities.some(p => p.id === personalityId);
+  const startProactiveMessaging = () => {
+    if (!proactiveEnabled) return;
+    
+    // Clear any existing timer
+    if (proactiveTimerRef.current) {
+      clearInterval(proactiveTimerRef.current);
+    }
+    
+    // Check every 5 minutes if a proactive message should be sent
+    proactiveTimerRef.current = setInterval(async () => {
+      if (!proactiveEnabled || !lastMessageTime) return;
+      
+      try {
+        const response = await axios.get(
+          `${API}/should_send_proactive/${personality}?last_message_time=${encodeURIComponent(lastMessageTime)}`
+        );
+        
+        if (response.data.should_send) {
+          await sendProactiveMessage();
+        }
+      } catch (error) {
+        console.error('Error checking proactive timing:', error);
+      }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+  };
+
+  const sendProactiveMessage = async () => {
+    if (!proactiveEnabled) return;
+    
+    try {
+      const customPersonality = customPersonalities.find(p => p.id === personality);
+      
+      const requestData = {
+        personality: personality,
+        custom_personalities: customPersonalities,
+        conversation_history: messages.slice(-6), // Last 6 messages for context
+        time_since_last_message: lastMessageTime ? 
+          Math.floor((Date.now() - new Date(lastMessageTime).getTime()) / (1000 * 60)) : 0
+      };
+
+      if (customPersonality) {
+        requestData.custom_prompt = customPersonality.prompt;
+      }
+
+      const response = await axios.post(`${API}/proactive_message`, requestData, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const proactiveMessage = {
+        role: 'assistant',
+        content: response.data.response,
+        personality: response.data.personality_used,
+        image: response.data.image,
+        imagePrompt: response.data.image_prompt,
+        isProactive: true, // Mark as proactive message
+        timestamp: new Date().toISOString()
+      };
+
+      setMessages(prevMessages => [...prevMessages, proactiveMessage]);
+      setLastMessageTime(proactiveMessage.timestamp);
+      
+      // Show notification if page is not visible
+      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+        const personalityDisplay = getPersonalityDisplay(personality);
+        new Notification(`New message from ${personalityDisplay}`, {
+          body: response.data.response.substring(0, 100) + '...',
+          icon: '/favicon.ico'
+        });
+      }
+
+    } catch (error) {
+      console.error('Error sending proactive message:', error);
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
   };
 
   return (
