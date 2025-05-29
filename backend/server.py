@@ -262,7 +262,16 @@ async def should_send_proactive_message(last_message_time: str, personality_id: 
             return False
             
         from datetime import datetime, timezone
-        last_time = datetime.fromisoformat(last_message_time.replace('Z', '+00:00'))
+        
+        # Handle different datetime formats
+        if last_message_time.endswith('Z'):
+            last_time = datetime.fromisoformat(last_message_time.replace('Z', '+00:00'))
+        elif '+' in last_message_time or last_message_time.endswith('UTC'):
+            last_time = datetime.fromisoformat(last_message_time.replace('UTC', '+00:00'))
+        else:
+            # Assume it's a basic ISO format, add UTC timezone
+            last_time = datetime.fromisoformat(last_message_time).replace(tzinfo=timezone.utc)
+            
         current_time = datetime.now(timezone.utc)
         minutes_passed = (current_time - last_time).total_seconds() / 60
         
@@ -276,7 +285,10 @@ async def should_send_proactive_message(last_message_time: str, personality_id: 
         }
         
         min_interval = proactive_intervals.get(personality_id, 30)
-        return minutes_passed >= min_interval
+        should_send = minutes_passed >= min_interval
+        
+        logging.info(f"Proactive check for {personality_id}: {minutes_passed:.1f} minutes passed, need {min_interval}, should_send: {should_send}")
+        return should_send
         
     except Exception as e:
         logging.error(f"Error checking proactive message timing: {e}")
