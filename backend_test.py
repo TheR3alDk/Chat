@@ -92,7 +92,7 @@ class PrivateAIChatbotTester:
         
         return success
 
-def test_chat_with_custom_personality(self, custom_prompt, message):
+    def test_chat_with_custom_personality(self, custom_prompt, message):
         """Test the chat endpoint with a custom personality"""
         data = {
             "messages": [{"role": "user", "content": message}],
