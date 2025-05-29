@@ -187,6 +187,67 @@ class PrivateAIChatbotTester:
         except Exception as e:
             print(f"Error saving image: {str(e)}")
 
+def test_self_image_generation(self, personality, request_phrase):
+    """Test self-image generation through the chat endpoint"""
+    print(f"\n🤳 Testing Self-Image Generation with {personality} personality")
+    print(f"Request: '{request_phrase}'")
+    
+    success, response = self.test_chat_endpoint(personality, request_phrase)
+    
+    if success:
+        if response.get('image'):
+            print(f"✅ Self-image generation successful!")
+            print(f"Image Prompt: '{response.get('image_prompt')}'")
+            return True, response
+        else:
+            print(f"❌ No self-image was generated for the request")
+            return False, response
+    
+    return False, response
+
+def test_custom_personality_self_image(self, custom_prompt, custom_name, request_phrase):
+    """Test self-image generation with a custom personality"""
+    print(f"\n🤳 Testing Self-Image Generation with custom personality: {custom_name}")
+    print(f"Request: '{request_phrase}'")
+    
+    data = {
+        "messages": [{"role": "user", "content": request_phrase}],
+        "personality": "custom_test",
+        "custom_prompt": custom_prompt,
+        "custom_personalities": [
+            {
+                "id": "custom_test",
+                "name": custom_name,
+                "prompt": custom_prompt
+            }
+        ],
+        "max_tokens": 1000,
+        "temperature": 0.7
+    }
+    
+    success, response = self.run_test(
+        f"Self-Image with custom personality: {custom_name}",
+        "POST",
+        "chat",
+        200,
+        data=data
+    )
+    
+    if success:
+        print(f"Custom Prompt: '{custom_prompt[:50]}...'")
+        print(f"Message: '{request_phrase}'")
+        print(f"Response: '{response.get('response')[:100]}...'")
+        
+        if response.get('image'):
+            print(f"✅ Self-image generation successful!")
+            print(f"Image Prompt: '{response.get('image_prompt')}'")
+            return True, response
+        else:
+            print(f"❌ No self-image was generated for the request")
+            return False, response
+    
+    return False, response
+
 def main():
     tester = PrivateAIChatbotTester()
     
@@ -196,58 +257,60 @@ def main():
     # Test personalities endpoint
     personalities_success = tester.test_personalities_endpoint()
     
-    # Test basic chat functionality with different personalities
-    chat_tests = [
-        ("best_friend", "Hey girl, what's up?"),
-        ("fantasy_rpg", "Tell me about your magical powers"),
-        ("therapist", "I'm feeling stressed lately"),
-        ("lover", "I missed you today"),
-        ("neutral", "Help me with a work task")
+    # Test self-image generation with different personalities
+    self_image_requests = [
+        "Can you show me what you look like?",
+        "What do you look like?",
+        "Take a selfie",
+        "I want to see you",
+        "Show yourself",
+        "Picture of you"
     ]
     
-    chat_results = []
-    for personality, message in chat_tests:
-        # Add a small delay between requests to avoid rate limiting
-        time.sleep(1)
-        result, _ = tester.test_chat_endpoint(personality, message)
-        chat_results.append((personality, result))
+    self_image_results = []
+    for personality in ["best_friend", "fantasy_rpg", "lover", "therapist", "neutral"]:
+        # Test one self-image request per personality
+        request = self_image_requests[len(self_image_results) % len(self_image_requests)]
+        time.sleep(2)  # Longer delay for image generation
+        result, response = tester.test_self_image_generation(personality, request)
+        self_image_results.append((personality, request, result, response))
+    
+    # Test natural conversation self-image requests
+    natural_self_image_requests = [
+        ("best_friend", "Hey bestie, send me a pic!"),
+        ("fantasy_rpg", "Show me your ethereal form"),
+        ("therapist", "I'd like to put a face to the voice"),
+        ("lover", "I'm curious what you look like, darling"),
+        ("neutral", "I'm curious about your appearance")
+    ]
+    
+    natural_self_image_results = []
+    for personality, request in natural_self_image_requests:
+        time.sleep(2)  # Longer delay for image generation
+        result, response = tester.test_self_image_generation(personality, request)
+        natural_self_image_results.append((personality, request, result, response))
     
     # Test with custom personality
-    custom_prompt = "You are a gaming buddy who loves video games. You're enthusiastic about gaming, knowledgeable about all platforms, and always ready to discuss the latest releases and gaming strategies."
-    custom_message = "What games would you recommend for someone who likes strategy games?"
-    time.sleep(1)
-    custom_result, _ = tester.test_chat_with_custom_personality(custom_prompt, custom_message)
-    
-    # Test image generation via chat with different personalities
-    image_requests = [
-        ("Can you draw me a sunset?", "sunset"),
-        ("Create a picture of a cute cat", "cat"),
-        ("Show me what a fantasy castle looks like", "castle"),
-        ("Generate an image of a futuristic city", "city"),
-        ("Make a picture of a peaceful forest", "forest")
+    custom_personalities = [
+        ("You are a gaming buddy who loves video games. You're enthusiastic about gaming, knowledgeable about all platforms, and always ready to discuss the latest releases and gaming strategies. You're a young woman with a trendy gaming setup.", "Gaming Buddy"),
+        ("You are a study partner who helps with academic subjects. You're knowledgeable, patient, and encouraging. You explain complex topics clearly and help organize study plans. You're a female graduate student with glasses and a professional appearance.", "Study Partner")
     ]
     
-    image_results = []
-    for personality in ["best_friend", "fantasy_rpg", "lover", "therapist", "neutral"]:
-        # Test one image request per personality to avoid rate limiting
-        request, keyword = image_requests[len(image_results) % len(image_requests)]
+    custom_self_image_results = []
+    for custom_prompt, custom_name in custom_personalities:
         time.sleep(2)  # Longer delay for image generation
-        result, response = tester.test_image_generation_via_chat(personality, request)
-        image_results.append((personality, keyword, result, response))
+        request = "Can you show me what you look like?"
+        result, response = tester.test_custom_personality_self_image(custom_prompt, custom_name, request)
+        custom_self_image_results.append((custom_name, result, response))
     
-    # Test direct image generation endpoint
-    direct_image_tests = [
-        ("A beautiful mountain landscape at sunset", "realistic"),
-        ("A cute cartoon rabbit with a carrot", "cartoon"),
-        ("A magical wizard casting a spell", "artistic"),
-        ("A futuristic anime character with glowing eyes", "anime")
-    ]
-    
-    direct_image_results = []
-    for prompt, style in direct_image_tests:
-        time.sleep(2)  # Longer delay for image generation
-        result, _ = tester.test_direct_image_generation(prompt, style)
-        direct_image_results.append((prompt, style, result))
+    # Test multiple requests to same personality for consistency
+    consistency_results = []
+    test_personality = "best_friend"
+    for i in range(2):  # Test twice for consistency
+        time.sleep(2)
+        request = "Show me what you look like"
+        result, response = tester.test_self_image_generation(test_personality, request)
+        consistency_results.append((i+1, result, response))
     
     # Print summary
     print("\n📊 Test Summary:")
@@ -255,22 +318,33 @@ def main():
     print(f"Health endpoint: {'✅ Passed' if health_success else '❌ Failed'}")
     print(f"Personalities endpoint: {'✅ Passed' if personalities_success else '❌ Failed'}")
     
-    print("\nBasic Chat endpoint tests:")
-    for personality, result in chat_results:
-        print(f"  - {personality}: {'✅ Passed' if result else '❌ Failed'}")
-    print(f"  - Custom personality: {'✅ Passed' if custom_result else '❌ Failed'}")
-    
-    print("\nImage Generation via Chat tests:")
-    for personality, keyword, result, response in image_results:
+    print("\nSelf-Image Generation tests:")
+    for personality, request, result, response in self_image_results:
         image_prompt = response.get('image_prompt', 'No prompt')
-        print(f"  - {personality} ({keyword}): {'✅ Passed' if result else '❌ Failed'}")
+        print(f"  - {personality} ('{request[:20]}...'): {'✅ Passed' if result else '❌ Failed'}")
         if result:
             print(f"    Prompt: {image_prompt}")
     
-    print("\nDirect Image Generation tests:")
-    for prompt, style, result in direct_image_results:
-        print(f"  - {style} style: {'✅ Passed' if result else '❌ Failed'}")
-        print(f"    Prompt: {prompt[:30]}...")
+    print("\nNatural Conversation Self-Image tests:")
+    for personality, request, result, response in natural_self_image_results:
+        image_prompt = response.get('image_prompt', 'No prompt')
+        print(f"  - {personality} ('{request[:20]}...'): {'✅ Passed' if result else '❌ Failed'}")
+        if result:
+            print(f"    Prompt: {image_prompt}")
+    
+    print("\nCustom Personality Self-Image tests:")
+    for custom_name, result, response in custom_self_image_results:
+        image_prompt = response.get('image_prompt', 'No prompt')
+        print(f"  - {custom_name}: {'✅ Passed' if result else '❌ Failed'}")
+        if result:
+            print(f"    Prompt: {image_prompt}")
+    
+    print("\nConsistency tests (multiple requests to same personality):")
+    for i, result, response in consistency_results:
+        image_prompt = response.get('image_prompt', 'No prompt')
+        print(f"  - Request {i}: {'✅ Passed' if result else '❌ Failed'}")
+        if result:
+            print(f"    Prompt: {image_prompt}")
     
     return 0 if tester.tests_passed == tester.tests_run else 1
 
