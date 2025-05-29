@@ -182,6 +182,22 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gender *
+              </label>
+              <select
+                value={formData.gender}
+                onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+              >
+                <option value="female">👩 Female</option>
+                <option value="male">👨 Male</option>
+                <option value="non-binary">⚧️ Non-Binary</option>
+                <option value="other">🌈 Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Profile Picture
               </label>
               <div className="flex items-center gap-4">
