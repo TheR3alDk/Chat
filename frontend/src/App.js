@@ -1040,9 +1040,13 @@ const ChatInterface = () => {
           {customPersonalities.map((p) => (
             <div key={p.id} className="group">
               <div 
-                onClick={() => {
+                onClick={async () => {
                   setCurrentPersonality(p.id);
-                  generateOpeningMessage(p.id);
+                  // Generate opening message if it's a custom personality with scenario and no existing conversation
+                  const currentMessages = conversations[p.id] || [];
+                  if (currentMessages.length === 0 && p.scenario) {
+                    await generateOpeningMessage(p.id);
+                  }
                 }}
                 className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 cursor-pointer hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl relative"
               >
