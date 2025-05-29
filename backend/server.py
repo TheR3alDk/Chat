@@ -409,12 +409,20 @@ async def chat_completion(
     try:
         # Use custom prompt if provided, otherwise use built-in personality
         if chat_request.custom_prompt:
-            system_prompt = chat_request.custom_prompt
+            base_system_prompt = chat_request.custom_prompt
         else:
-            system_prompt = PERSONALITY_PROMPTS.get(
+            base_system_prompt = PERSONALITY_PROMPTS.get(
                 chat_request.personality, 
                 PERSONALITY_PROMPTS["neutral"]
             )
+        
+        # Build system prompt with scenario context for custom personalities
+        system_prompt = build_system_prompt_with_scenario(
+            base_system_prompt,
+            chat_request.custom_personalities,
+            chat_request.personality,
+            chat_request.is_first_message
+        )
         
         # Check if user is requesting an image
         user_message = chat_request.messages[-1].content if chat_request.messages else ""
