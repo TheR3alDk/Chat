@@ -699,7 +699,7 @@ const ChatInterface = () => {
         vibrate: [200, 100, 200],
         data: {
           timestamp: Date.now(),
-          personality: personality
+          personality: currentPersonality
         }
       });
 
