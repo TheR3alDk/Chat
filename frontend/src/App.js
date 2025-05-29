@@ -12,22 +12,81 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
     name: '',
     description: '',
     emoji: '',
+    customImage: null,
     prompt: ''
   });
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (editingPersonality) {
       setFormData(editingPersonality);
+      setImagePreview(editingPersonality.customImage || null);
     } else {
       setFormData({
         id: '',
         name: '',
         description: '',
         emoji: '',
+        customImage: null,
         prompt: ''
       });
+      setImagePreview(null);
     }
   }, [editingPersonality, isOpen]);
+
+  const compressImage = (file, maxWidth = 100, quality = 0.8) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    try {
+      const compressedImage = await compressImage(file);
+      setFormData({...formData, customImage: compressedImage});
+      setImagePreview(compressedImage);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      alert('Error processing image. Please try another file.');
+    }
+  };
+
+  const removeImage = () => {
+    setFormData({...formData, customImage: null});
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleSave = () => {
     if (!formData.name || !formData.prompt) {
@@ -89,7 +148,42 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Emoji (Optional)
+                Profile Picture
+              </label>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Upload a custom picture (max 5MB) or use emoji below
+                  </p>
+                </div>
+                {imagePreview && (
+                  <div className="relative">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-300"
+                    />
+                    <button
+                      onClick={removeImage}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Emoji (Fallback)
               </label>
               <input
                 type="text"
@@ -99,6 +193,9 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
                 maxLength="2"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                This will be used if no custom picture is uploaded
+              </p>
             </div>
 
             <div>
