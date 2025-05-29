@@ -1611,8 +1611,7 @@ const ChatInterface = () => {
     </div>
   );
 
-  // Individual Chat Page Component with Simplified Interface
-  const ChatPage = () => {
+  const HomePage = () => (
     const currentMessages = conversations[currentPersonality] || [];
     const currentPersonalityImage = getPersonalityImage(currentPersonality);
     const [showDropdown, setShowDropdown] = useState(false);
