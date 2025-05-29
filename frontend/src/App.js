@@ -695,6 +695,9 @@ const ChatInterface = () => {
                       {isCustomPersonality(message.personality || personality) && (
                         <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Custom</span>
                       )}
+                      {message.isProactive && (
+                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">💬 Proactive</span>
+                      )}
                     </div>
                   </div>
                 )}
