@@ -467,7 +467,7 @@ const ChatInterface = () => {
                       <optgroup label="Custom Personalities" className="bg-gray-800">
                         {customPersonalities.map((p) => (
                           <option key={p.id} value={p.id} className="bg-gray-800">
-                            {p.emoji || '👤'} {p.name}
+                            {p.customImage ? '🖼️' : (p.emoji || '👤')} {p.name}
                           </option>
                         ))}
                       </optgroup>
