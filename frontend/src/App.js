@@ -1736,9 +1736,6 @@ const ChatInterface = () => {
     const currentMessages = conversations[currentPersonality] || [];
     const currentPersonalityImage = getPersonalityImage(currentPersonality);
     
-    console.log('ChatPage render - currentPersonality:', currentPersonality);
-    console.log('ChatPage render - currentPersonalityImage:', !!currentPersonalityImage);
-    
     return (
       <div 
         className="min-h-screen bg-black relative"
