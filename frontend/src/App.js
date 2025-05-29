@@ -235,6 +235,52 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
                 This scenario will influence how the AI starts conversations and provides context for interactions.
               </p>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Visibility Settings
+              </label>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="visibility"
+                    checked={!formData.isPublic}
+                    onChange={() => setFormData({...formData, isPublic: false})}
+                    className="mr-2"
+                  />
+                  🔒 Private (Only you can use)
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="visibility"
+                    checked={formData.isPublic}
+                    onChange={() => setFormData({...formData, isPublic: true})}
+                    className="mr-2"
+                  />
+                  🌍 Public (Everyone can discover and use)
+                </label>
+              </div>
+            </div>
+
+            {formData.isPublic && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tags (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.tags}
+                  onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                  placeholder="e.g., gaming, study, roleplay, fantasy"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Separate tags with commas to help others discover your personality
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 mt-6">
