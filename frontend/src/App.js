@@ -384,6 +384,11 @@ const ChatInterface = () => {
   const [notificationPermission, setNotificationPermission] = useState('default');
   const [lastMessageTimes, setLastMessageTimes] = useState({}); // {personalityId: timestamp}
   
+  // Discovery page filters
+  const [discoverySearchTerm, setDiscoverySearchTerm] = useState('');
+  const [discoveryGenderFilter, setDiscoveryGenderFilter] = useState('');
+  const [discoveryTagFilters, setDiscoveryTagFilters] = useState([]);
+  
   const messagesEndRef = useRef(null);
   const proactiveTimersRef = useRef({}); // {personalityId: timerId}
 
