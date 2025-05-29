@@ -236,9 +236,9 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
 };
 
 const ChatInterface = () => {
-  const [messages, setMessages] = useState([]);
+  const [conversations, setConversations] = useState({}); // {personalityId: messages[]}
+  const [currentPersonality, setCurrentPersonality] = useState(null); // null = home page
   const [input, setInput] = useState('');
-  const [personality, setPersonality] = useState('best_friend');
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [error, setError] = useState(null);
@@ -249,9 +249,9 @@ const ChatInterface = () => {
   const [proactiveEnabled, setProactiveEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState('default');
-  const [lastMessageTime, setLastMessageTime] = useState(null);
+  const [lastMessageTimes, setLastMessageTimes] = useState({}); // {personalityId: timestamp}
   const messagesEndRef = useRef(null);
-  const proactiveTimerRef = useRef(null);
+  const proactiveTimersRef = useRef({}); // {personalityId: timerId}
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
