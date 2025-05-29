@@ -497,9 +497,9 @@ const ChatInterface = () => {
   const loadPublicPersonalities = async () => {
     try {
       const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (genderFilter) params.append('gender', genderFilter);
-      if (selectedTagFilters.length > 0) params.append('tags', selectedTagFilters.join(','));
+      if (discoverySearchTerm) params.append('search', discoverySearchTerm);
+      if (discoveryGenderFilter) params.append('gender', discoveryGenderFilter);
+      if (discoveryTagFilters.length > 0) params.append('tags', discoveryTagFilters.join(','));
       
       const response = await axios.get(`${API}/personalities/public?${params.toString()}`);
       setPublicPersonalities(response.data.personalities || []);
