@@ -33,7 +33,9 @@ const ChatInterface = () => {
 
   // Save messages to localStorage whenever messages change
   useEffect(() => {
-    localStorage.setItem('chatMessages', JSON.stringify(messages));
+    if (messages.length > 0) {
+      localStorage.setItem('chatMessages', JSON.stringify(messages));
+    }
   }, [messages]);
 
   const loadPersonalities = async () => {
