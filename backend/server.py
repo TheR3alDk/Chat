@@ -56,6 +56,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     personality: str = "neutral"
+    custom_prompt: str = None  # For custom personalities
     max_tokens: int = 1000
     temperature: float = 0.7
 
