@@ -137,3 +137,16 @@
     right: auto !important;
   }
 }
+
+/* Chat Background Blur Overlay */
+.blur-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+  z-index: 1;
+}
