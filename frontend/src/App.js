@@ -1761,23 +1761,110 @@ const ChatInterface = () => {
         )}
         
         <div className="container mx-auto max-w-4xl h-screen flex flex-col relative" style={{ zIndex: 10 }}>
-          {/* Header */}
-          <div className="bg-white/10 backdrop-blur-md border-b border-white/20 p-4">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setCurrentPersonality(null)}
-                  className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-lg transition-colors"
-                  title="Back to home"
-                >
-                  ← Back
-                </button>
-                <PersonalityAvatar personalityId={currentPersonality} size="medium" />
-                <div>
-                  <h1 className="text-xl font-bold text-white">
-                    {getPersonalityDisplay(currentPersonality)}
-                  </h1>
-                  {isCustomPersonality(currentPersonality) && (
+          {/* Minimal Header with Back Button and Dropdown */}
+          <div className="flex items-center justify-between p-4">
+            {/* Back Button */}
+            <button
+              onClick={() => setCurrentPersonality(null)}
+              className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-2 hover:bg-white/20 transition-colors"
+              title="Back to conversations"
+            >
+              <span className="text-white text-lg">←</span>
+            </button>
+
+            {/* Dropdown Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-2 hover:bg-white/20 transition-colors"
+                title="Options"
+              >
+                <span className="text-white text-lg">⚙️</span>
+              </button>
+
+              {/* Dropdown Content */}
+              {showDropdown && (
+                <div className="absolute top-12 right-0 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4 min-w-[250px] z-20">
+                  <div className="space-y-3">
+                    {/* Personality Info */}
+                    <div className="border-b border-white/20 pb-3">
+                      <div className="flex items-center gap-3">
+                        <PersonalityAvatar personalityId={currentPersonality} size="medium" />
+                        <div>
+                          <h3 className="text-white font-medium">{getPersonalityDisplay(currentPersonality)}</h3>
+                          <p className="text-white/60 text-sm">
+                            {currentMessages.length} messages
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Controls */}
+                    <div className="space-y-2">
+                      <button
+                        onClick={toggleNotifications}
+                        className={`w-full flex items-center justify-between p-2 rounded transition-colors ${
+                          notificationsEnabled && notificationPermission === 'granted'
+                            ? 'bg-green-500/20 text-green-300' 
+                            : 'bg-gray-500/20 text-gray-300'
+                        }`}
+                      >
+                        <span>🔔 Notifications</span>
+                        <span className="text-xs">
+                          {notificationPermission === 'granted' && notificationsEnabled ? 'ON' : 'OFF'}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => setProactiveEnabled(!proactiveEnabled)}
+                        className={`w-full flex items-center justify-between p-2 rounded transition-colors ${
+                          proactiveEnabled 
+                            ? 'bg-green-500/20 text-green-300' 
+                            : 'bg-gray-500/20 text-gray-300'
+                        }`}
+                      >
+                        <span>💬 Proactive Messages</span>
+                        <span className="text-xs">{proactiveEnabled ? 'ON' : 'OFF'}</span>
+                      </button>
+
+                      {/* Custom Personality Edit Option */}
+                      {isCustomPersonality(currentPersonality) && (
+                        <button
+                          onClick={() => {
+                            const personality = customPersonalities.find(p => p.id === currentPersonality);
+                            setEditingPersonality(personality);
+                            setShowCreator(true);
+                            setShowDropdown(false);
+                          }}
+                          className="w-full flex items-center justify-between p-2 rounded bg-blue-500/20 text-blue-300 transition-colors hover:bg-blue-500/30"
+                        >
+                          <span>✏️ Edit Personality</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          deleteConversation(currentPersonality);
+                          setShowDropdown(false);
+                        }}
+                        className="w-full flex items-center justify-between p-2 rounded bg-red-500/20 text-red-300 transition-colors hover:bg-red-500/30"
+                      >
+                        <span>🗑️ Delete Conversation</span>
+                      </button>
+                    </div>
+
+                    {/* Close Dropdown */}
+                    <button
+                      onClick={() => setShowDropdown(false)}
+                      className="w-full text-center text-white/60 text-sm pt-2 border-t border-white/20"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
                     <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Custom</span>
                   )}
                 </div>
