@@ -64,6 +64,7 @@ class ChatRequest(BaseModel):
     personality: str = "neutral"
     custom_prompt: str = None  # For custom personalities
     custom_personalities: List[Dict] = []  # Pass custom personalities for self-image generation
+    is_first_message: bool = False  # Flag to indicate if this is the first message in conversation
     max_tokens: int = 1000
     temperature: float = 0.7
 
