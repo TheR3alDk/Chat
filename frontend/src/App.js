@@ -1059,14 +1059,6 @@ const ChatInterface = () => {
       </div>
     </div>
   );
-    const messages = conversations[personalityId] || [];
-    if (messages.length === 0) return 'No messages yet';
-    const lastMessage = messages[messages.length - 1];
-    const preview = lastMessage.content.length > 50 
-      ? lastMessage.content.substring(0, 50) + '...' 
-      : lastMessage.content;
-    return lastMessage.role === 'user' ? `You: ${preview}` : preview;
-  };
 
   const getUnreadCount = (personalityId) => {
     // For now, return 0. In future could track unread messages
