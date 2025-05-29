@@ -51,22 +51,29 @@ const HomePage = () => {
       <h1 className="text-2xl font-bold mb-6 text-white">AI Companions</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {personalities.map((personality) => (
-          <div 
-            key={personality.id} 
-            className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4 hover:bg-white/20 transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                {personality.name.charAt(0)}
-              </div>
-              <div>
-                <h3 className="text-white font-medium">{personality.name}</h3>
-                <p className="text-white/60 text-sm">{personality.description}</p>
+        {Array.isArray(personalities) && personalities.length > 0 ? (
+          personalities.map((personality) => (
+            <div 
+              key={personality.id} 
+              className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4 hover:bg-white/20 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                  {personality.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="text-white font-medium">{personality.name}</h3>
+                  <p className="text-white/60 text-sm">{personality.description}</p>
+                </div>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="col-span-full text-center py-12 text-white/60">
+            <p className="text-xl mb-2">No companions found</p>
+            <p>Create your first AI companion by clicking the + button</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
