@@ -50,1462 +50,745 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
       });
       setImagePreview(null);
     }
-    
-    // Load available categories
-    loadCategories();
-  }, [editingPersonality, isOpen]);
+  }, [editingPersonality]);
 
-  const loadCategories = async () => {
-    try {
-      const response = await axios.get(`${API}/personalities/tags`);
-      setAvailableCategories(response.data.categories || []);
-    } catch (error) {
-      console.error('Error loading categories:', error);
-    }
-  };
+  // Fetch available tags for categorization
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const response = await axios.get(`${API}/personalities/tags`);
+        setAvailableCategories(response.data);
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+      }
+    };
+    fetchTags();
+  }, []);
 
-  const handleTagToggle = (tag) => {
-    const newTags = formData.tags.includes(tag)
-      ? formData.tags.filter(t => t !== tag)
-      : [...formData.tags, tag];
-    setFormData({...formData, tags: newTags});
-  };
-
-  const compressImage = (file, maxWidth = 100, quality = 0.8) => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = () => {
-        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
-        canvas.width = img.width * ratio;
-        canvas.height = img.height * ratio;
-        
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      
-      img.src = URL.createObjectURL(file);
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value
     });
   };
 
-  const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should be less than 5MB');
-      return;
-    }
-
-    try {
-      const compressedImage = await compressImage(file);
-      setFormData({...formData, customImage: compressedImage});
-      setImagePreview(compressedImage);
-    } catch (error) {
-      console.error('Error compressing image:', error);
-      alert('Error processing image. Please try another file.');
-    }
-  };
-
-  const removeImage = () => {
-    setFormData({...formData, customImage: null});
-    setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleSave = () => {
-    if (!formData.name || !formData.prompt) {
-      alert('Please fill in name and prompt fields');
-      return;
-    }
-
-    const personality = {
+  const handleTagToggle = (tag) => {
+    const updatedTags = formData.tags.includes(tag)
+      ? formData.tags.filter(t => t !== tag)
+      : [...formData.tags, tag];
+    
+    setFormData({
       ...formData,
-      id: formData.id || `custom_${Date.now()}`,
-      emoji: formData.emoji || '👤'
-    };
+      tags: updatedTags
+    });
+  };
 
-    onSave(personality);
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        setFormData({
+          ...formData,
+          customImage: reader.result
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
     onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">
-              {editingPersonality ? 'Edit Personality' : 'Create Custom Personality'}
-            </h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">
-              ×
-            </button>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 border border-white/20 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <h2 className="text-2xl font-bold text-white mb-4">
+          {editingPersonality ? 'Edit Personality' : 'Create New AI Personality'}
+        </h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Basic Information */}
+          <div>
+            <label className="block text-white mb-1">Name</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full bg-gray-800 text-white border border-gray-700 rounded p-2"
+              required
+            />
           </div>
-
-          <div className="space-y-4">
+          
+          <div>
+            <label className="block text-white mb-1">Description</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              className="w-full bg-gray-800 text-white border border-gray-700 rounded p-2 h-20"
+              required
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Personality Name *
-              </label>
+              <label className="block text-white mb-1">Emoji</label>
               <input
                 type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                placeholder="e.g., Gaming Buddy, Study Partner"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                name="emoji"
+                value={formData.emoji}
+                onChange={handleChange}
+                className="w-full bg-gray-800 text-white border border-gray-700 rounded p-2"
+                placeholder="🤖"
               />
             </div>
-
+            
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
-              <input
-                type="text"
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                placeholder="Brief description of this personality"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Gender *
-              </label>
+              <label className="block text-white mb-1">Gender</label>
               <select
+                name="gender"
                 value={formData.gender}
-                onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                onChange={handleChange}
+                className="w-full bg-gray-800 text-white border border-gray-700 rounded p-2"
               >
-                <option value="female">👩 Female</option>
-                <option value="male">👨 Male</option>
-                <option value="non-binary">⚧️ Non-Binary</option>
-                <option value="other">🌈 Other</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="neutral">Neutral</option>
               </select>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Profile Picture
-              </label>
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Upload a custom picture (max 5MB) or use emoji below
-                  </p>
-                </div>
-                {imagePreview && (
-                  <div className="relative">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-300"
-                    />
-                    <button
-                      onClick={removeImage}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Emoji (Fallback)
-              </label>
-              <input
-                type="text"
-                value={formData.emoji}
-                onChange={(e) => setFormData({...formData, emoji: e.target.value})}
-                placeholder="e.g., 🎮, 📚, 🎨"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                maxLength="2"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                This will be used if no custom picture is uploaded
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Personality Prompt *
-              </label>
-              <textarea
-                value={formData.prompt}
-                onChange={(e) => setFormData({...formData, prompt: e.target.value})}
-                placeholder="Describe how this AI personality should behave, speak, and interact. Be specific about traits, tone, and characteristics..."
-                rows="4"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Tip: Include details about gender, speaking style, interests, and how they should respond to users.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Conversation Scenario (Optional)
-              </label>
-              <textarea
-                value={formData.scenario}
-                onChange={(e) => setFormData({...formData, scenario: e.target.value})}
-                placeholder="Set up a scenario or backstory for how conversations should start. For example: 'You are at a coffee shop and just met the user' or 'You are childhood friends reuniting after years'..."
-                rows="3"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                This scenario will influence how the AI starts conversations and provides context for interactions.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Visibility Settings
-              </label>
-              <div className="flex items-center gap-3">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="visibility"
-                    checked={!formData.isPublic}
-                    onChange={() => setFormData({...formData, isPublic: false})}
-                    className="mr-2"
-                  />
-                  🔒 Private (Only you can use)
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="visibility"
-                    checked={formData.isPublic}
-                    onChange={() => setFormData({...formData, isPublic: true})}
-                    className="mr-2"
-                  />
-                  🌍 Public (Everyone can discover and use)
-                </label>
-              </div>
-            </div>
-
-            {formData.isPublic && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Categories & Tags
-                </label>
-                <div className="max-h-64 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                  {availableCategories.map((category) => (
-                    <div key={category.category} className="mb-4">
-                      <h4 className="font-medium text-gray-800 mb-2">{category.category}</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {category.tags.map((tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => handleTagToggle(tag)}
-                            className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                              formData.tags.includes(tag)
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                          >
-                            {tag}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-2 text-xs text-gray-500">
-                  Selected tags: {formData.tags.length > 0 ? formData.tags.join(', ') : 'None'}
-                </div>
-              </div>
-            )}
           </div>
-
-          <div className="flex gap-3 mt-6">
+          
+          {/* Custom Image Upload */}
+          <div>
+            <label className="block text-white mb-1">Custom Image (Optional)</label>
+            <div className="flex items-center gap-4">
+              {imagePreview && (
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-700">
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current.click()}
+                className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded"
+              >
+                {imagePreview ? 'Change Image' : 'Upload Image'}
+              </button>
+              {imagePreview && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImagePreview(null);
+                    setFormData({
+                      ...formData,
+                      customImage: null
+                    });
+                  }}
+                  className="text-red-400 hover:text-red-300"
+                >
+                  Remove
+                </button>
+              )}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageChange}
+                accept="image/*"
+                className="hidden"
+              />
+            </div>
+          </div>
+          
+          {/* Personality Prompt */}
+          <div>
+            <label className="block text-white mb-1">Personality Prompt</label>
+            <textarea
+              name="prompt"
+              value={formData.prompt}
+              onChange={handleChange}
+              className="w-full bg-gray-800 text-white border border-gray-700 rounded p-2 h-32"
+              placeholder="Describe how this AI should behave, speak, and what knowledge they should have..."
+              required
+            />
+          </div>
+          
+          {/* Scenario */}
+          <div>
+            <label className="block text-white mb-1">Scenario (Optional)</label>
+            <textarea
+              name="scenario"
+              value={formData.scenario}
+              onChange={handleChange}
+              className="w-full bg-gray-800 text-white border border-gray-700 rounded p-2 h-20"
+              placeholder="Describe the scenario or context for conversations with this AI..."
+            />
+          </div>
+          
+          {/* Tags/Categories */}
+          <div>
+            <label className="block text-white mb-2">Categories (Optional)</label>
+            <div className="flex flex-wrap gap-2">
+              {availableCategories.map(tag => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => handleTagToggle(tag)}
+                  className={`px-3 py-1 rounded-full text-sm ${
+                    formData.tags.includes(tag)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Public/Private Setting */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="isPublic"
+              name="isPublic"
+              checked={formData.isPublic}
+              onChange={handleChange}
+              className="mr-2"
+            />
+            <label htmlFor="isPublic" className="text-white">
+              Make this personality public (others can use it)
+            </label>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 pt-4">
             <button
+              type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+              className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded"
             >
               Cancel
             </button>
             <button
-              onClick={handleSave}
-              className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
             >
-              {editingPersonality ? 'Save Changes' : 'Create Personality'}
+              {editingPersonality ? 'Update' : 'Create'}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
 };
 
-const ChatInterface = () => {
-  const [conversations, setConversations] = useState({}); // {personalityId: messages[]}
-  const [currentPersonality, setCurrentPersonality] = useState(null); // null = home page
-  const [currentTab, setCurrentTab] = useState('discover'); // discover, chats, profile
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [error, setError] = useState(null);
-  const [personalities, setPersonalities] = useState([]);
-  const [customPersonalities, setCustomPersonalities] = useState([]);
+// Discovery Page Component
+const DiscoveryPage = () => {
   const [publicPersonalities, setPublicPersonalities] = useState([]);
-  const [userPersonalities, setUserPersonalities] = useState([]);
-  const [userId] = useState(() => localStorage.getItem('userId') || `user_${Date.now()}`);
-  const [showCreator, setShowCreator] = useState(false);
-  const [editingPersonality, setEditingPersonality] = useState(null);
-  const [activeTab, setActiveTab] = useState('chats'); // 'discover', 'chats', 'profile'
-  const [proactiveEnabled, setProactiveEnabled] = useState(true);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [notificationPermission, setNotificationPermission] = useState('default');
-  const [lastMessageTimes, setLastMessageTimes] = useState({}); // {personalityId: timestamp}
-  
-  // Discovery page filters
-  const [discoverySearchTerm, setDiscoverySearchTerm] = useState('');
-  const [discoveryGenderFilter, setDiscoveryGenderFilter] = useState('');
-  const [discoveryTagFilters, setDiscoveryTagFilters] = useState([]);
-  
-  const messagesEndRef = useRef(null);
-  const proactiveTimersRef = useRef({}); // {personalityId: timerId}
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [genderFilter, setGenderFilter] = useState('');
+  const [selectedTagFilters, setSelectedTagFilters] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [currentPersonality, conversations]);
+    const fetchPublicPersonalities = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`${API}/personalities/public`);
+        setPublicPersonalities(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching public personalities:', error);
+        setLoading(false);
+      }
+    };
 
-  // Load data on component mount
-  useEffect(() => {
-    // Set up user ID in localStorage
-    if (!localStorage.getItem('userId')) {
-      localStorage.setItem('userId', userId);
-    }
-    
-    loadPersonalities();
-    loadCustomPersonalities();
-    loadPublicPersonalities();
-    loadUserPersonalities();
-    
-    // Load notification settings
-    const savedNotifications = localStorage.getItem('notificationsEnabled');
-    if (savedNotifications !== null) {
-      setNotificationsEnabled(savedNotifications === 'true');
-    }
-    
-    // Check current notification permission
-    if ('Notification' in window) {
-      setNotificationPermission(Notification.permission);
-    } else {
-      setNotificationPermission('unsupported');
-    }
-    
-    // Request permission if enabled but not granted
-    if (notificationsEnabled && Notification.permission === 'default') {
-      requestNotificationPermission();
-    }
-    
-    const savedMessages = localStorage.getItem('chatMessages');
-    if (savedMessages) {
-      setConversations(JSON.parse(savedMessages));
-    }
-    const savedLastMessageTimes = localStorage.getItem('lastMessageTimes');
-    if (savedLastMessageTimes) {
-      setLastMessageTimes(JSON.parse(savedLastMessageTimes));
-    }
+    const fetchTags = async () => {
+      try {
+        const response = await axios.get(`${API}/personalities/tags`);
+        setAvailableTags(response.data);
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+      }
+    };
+
+    fetchPublicPersonalities();
+    fetchTags();
   }, []);
 
-  // Reload public personalities when discovery filters change
-  useEffect(() => {
-    loadPublicPersonalities();
-  }, [discoverySearchTerm, discoveryGenderFilter, discoveryTagFilters]);
-
-  // Start proactive messaging when personality changes or when enabled
-  useEffect(() => {
-    if (proactiveEnabled && currentPersonality && lastMessageTimes[currentPersonality]) {
-      startProactiveMessaging();
-    } else if (proactiveTimersRef.current[currentPersonality]) {
-      clearInterval(proactiveTimersRef.current[currentPersonality]);
-      delete proactiveTimersRef.current[currentPersonality];
-    }
+  const filteredPersonalities = publicPersonalities.filter(p => {
+    // Search term filter
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          p.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return () => {
-      if (proactiveTimersRef.current[currentPersonality]) {
-        clearInterval(proactiveTimersRef.current[currentPersonality]);
-        delete proactiveTimersRef.current[currentPersonality];
-      }
-    };
-  }, [currentPersonality, proactiveEnabled, lastMessageTimes, customPersonalities]);
-
-  // Save messages and update last message time whenever conversations change
-  useEffect(() => {
-    if (Object.keys(conversations).length > 0) {
-      localStorage.setItem('conversations', JSON.stringify(conversations));
-      
-      // Update last message times for each conversation
-      const newLastMessageTimes = { ...lastMessageTimes };
-      Object.entries(conversations).forEach(([personalityId, messages]) => {
-        if (messages.length > 0) {
-          const lastMessage = messages[messages.length - 1];
-          if (lastMessage.role === 'user' || lastMessage.role === 'assistant') {
-            const timestamp = lastMessage.timestamp || new Date().toISOString();
-            newLastMessageTimes[personalityId] = timestamp;
-          }
-        }
-      });
-      
-      setLastMessageTimes(newLastMessageTimes);
-      localStorage.setItem('lastMessageTimes', JSON.stringify(newLastMessageTimes));
-    }
-  }, [conversations]);
-
-  const loadPersonalities = async () => {
-    try {
-      const response = await axios.get(`${API}/personalities`);
-      setPersonalities(response.data.personalities);
-    } catch (err) {
-      console.error('Failed to load personalities:', err);
-    }
-  };
-
-  const loadCustomPersonalities = () => {
-    const saved = localStorage.getItem('customPersonalities');
-    if (saved) {
-      setCustomPersonalities(JSON.parse(saved));
-    }
-  };
-
-  const loadPublicPersonalities = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (discoverySearchTerm) params.append('search', discoverySearchTerm);
-      if (discoveryGenderFilter) params.append('gender', discoveryGenderFilter);
-      if (discoveryTagFilters.length > 0) params.append('tags', discoveryTagFilters.join(','));
-      
-      const response = await axios.get(`${API}/personalities/public?${params.toString()}`);
-      setPublicPersonalities(response.data.personalities || []);
-    } catch (err) {
-      console.error('Failed to load public personalities:', err);
-    }
-  };
-
-  const loadUserPersonalities = async () => {
-    try {
-      const response = await axios.get(`${API}/personalities/user/${userId}`);
-      setUserPersonalities(response.data.personalities || []);
-    } catch (err) {
-      console.error('Failed to load user personalities:', err);
-    }
-  };
-
-  const saveCustomPersonalities = (personalities) => {
-    localStorage.setItem('customPersonalities', JSON.stringify(personalities));
-    setCustomPersonalities(personalities);
-  };
-
-  const handleSavePersonality = async (personalityData) => {
-    const existing = customPersonalities.find(p => p.id === personalityData.id);
-    let updated;
+    // Gender filter
+    const matchesGender = !genderFilter || p.gender === genderFilter;
     
-    if (existing) {
-      updated = customPersonalities.map(p => 
-        p.id === personalityData.id ? personalityData : p
-      );
-    } else {
-      updated = [...customPersonalities, personalityData];
-    }
+    // Tags filter
+    const matchesTags = selectedTagFilters.length === 0 || 
+                        selectedTagFilters.every(tag => p.tags && p.tags.includes(tag));
     
-    saveCustomPersonalities(updated);
+    return matchesSearch && matchesGender && matchesTags;
+  });
 
-    // If it's public, also save to backend
-    if (personalityData.isPublic) {
-      try {
-        const publicPersonality = {
-          ...personalityData,
-          creator_id: userId,
-          tags: personalityData.tags ? personalityData.tags.split(',').map(tag => tag.trim()) : []
-        };
-
-        await axios.post(`${API}/personalities/public`, publicPersonality);
-        
-        // Reload public and user personalities
-        await loadPublicPersonalities();
-        await loadUserPersonalities();
-        
-        console.log('Public personality saved successfully');
-      } catch (error) {
-        console.error('Error saving public personality:', error);
-        alert('Error saving public personality. It will remain private.');
-      }
-    }
-  };
-
-  const handleDeletePersonality = (personalityId) => {
-    if (window.confirm('Are you sure you want to delete this personality?')) {
-      const updated = customPersonalities.filter(p => p.id !== personalityId);
-      saveCustomPersonalities(updated);
-      
-      // Switch to default if current personality is deleted
-      if (currentPersonality === personalityId) {
-        setCurrentPersonality('best_friend');
-      }
-    }
-  };
-
-  const handleSend = async () => {
-    if (!input.trim() || !currentPersonality) return;
-
-    const userMessage = { role: 'user', content: input.trim(), timestamp: new Date().toISOString() };
-    const currentMessages = conversations[currentPersonality] || [];
-    const newMessages = [...currentMessages, userMessage];
-    setConversations(prev => ({
-      ...prev,
-      [currentPersonality]: newMessages
-    }));
-    setInput('');
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Find custom personality prompt if using custom personality
-      const customPersonality = customPersonalities.find(p => p.id === currentPersonality);
-      
-      const currentMessages = conversations[currentPersonality] || [];
-      const isFirstMessage = currentMessages.length === 0;
-      
-      const requestData = {
-        messages: newMessages,
-        personality: currentPersonality,
-        custom_personalities: customPersonalities, // Pass custom personalities for self-image generation
-        is_first_message: isFirstMessage,
-        max_tokens: 1000,
-        temperature: 0.7
-      };
-
-      // Add custom prompt if it's a custom personality
-      if (customPersonality) {
-        requestData.custom_prompt = customPersonality.prompt;
-      }
-
-      // Check if user is requesting an image (including self-images)
-      const imageKeywords = ['create', 'generate', 'make', 'draw', 'show', 'picture', 'image', 'photo'];
-      const selfImageKeywords = ['look like', 'selfie', 'yourself', 'what you look', 'see you', 'picture of you', 'image of you'];
-      
-      const hasImageRequest = imageKeywords.some(keyword => 
-        input.toLowerCase().includes(keyword)
-      );
-      
-      const hasSelfImageRequest = selfImageKeywords.some(keyword => 
-        input.toLowerCase().includes(keyword)
-      );
-
-      if (hasImageRequest || hasSelfImageRequest) {
-        setIsGeneratingImage(true);
-      }
-
-      const response = await axios.post(`${API}/chat`, requestData, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const assistantMessage = {
-        role: 'assistant',
-        content: response.data.response,
-        personality: response.data.personality_used,
-        image: response.data.image,
-        imagePrompt: response.data.image_prompt,
-        timestamp: new Date().toISOString()
-      };
-
-      // Debug logging
-      if (response.data.image) {
-        console.log('Image received:', response.data.image.substring(0, 50) + '...');
-        console.log('Image prompt:', response.data.image_prompt);
-      } else {
-        console.log('No image in response');
-      }
-
-      setConversations(prev => ({
-        ...prev,
-        [currentPersonality]: [...newMessages, assistantMessage]
-      }));
-      
-      // Send notification for regular chat response
-      sendMessageNotification(assistantMessage.content, assistantMessage.personality);
-    } catch (err) {
-      setError(
-        err.response?.data?.detail || 
-        'Failed to get response. Please try again.'
-      );
-      console.error('Chat error:', err);
-    } finally {
-      setIsLoading(false);
-      setIsGeneratingImage(false);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const clearChat = () => {
-    setConversations({});
-    setLastMessageTimes({});
-    localStorage.removeItem('conversations');
-    localStorage.removeItem('lastMessageTimes');
-    
-    // Clear proactive timers
-    Object.values(proactiveTimersRef.current).forEach(timerId => {
-      clearInterval(timerId);
-    });
-    proactiveTimersRef.current = {};
-  };
-
-  const getAllPersonalities = () => {
-    return [...personalities, ...customPersonalities];
-  };
-
-  const getPersonalityDisplay = (personalityId) => {
-    const allPersonalities = getAllPersonalities();
-    const personality = allPersonalities.find(p => p.id === personalityId);
-    return personality ? personality.name : personalityId;
-  };
-
-  const getPersonalityEmoji = (personalityId) => {
-    const customPersonality = customPersonalities.find(p => p.id === personalityId);
-    if (customPersonality) {
-      return customPersonality.emoji || '👤';
-    }
-
-    const builtInEmojis = {
-      'lover': '💕',
-      'therapist': '🧠',
-      'best_friend': '👯‍♀️',
-      'fantasy_rpg': '🧚‍♀️',
-      'neutral': '👩‍💼'
-    };
-    return builtInEmojis[personalityId] || '👩‍💼';
-  };
-
-  const getPersonalityImage = (personalityId) => {
-    const customPersonality = customPersonalities.find(p => p.id === personalityId);
-    return customPersonality?.customImage || null;
-  };
-
-  const PersonalityAvatar = ({ personalityId, size = "small" }) => {
-    const customImage = getPersonalityImage(personalityId);
-    const emoji = getPersonalityEmoji(personalityId);
-    
-    const sizeClasses = {
-      small: "w-6 h-6",
-      medium: "w-8 h-8", 
-      large: "w-12 h-12"
-    };
-    
-    if (customImage) {
-      return (
-        <img 
-          src={customImage} 
-          alt="Personality" 
-          className={`${sizeClasses[size]} rounded-full object-cover border border-gray-300 flex-shrink-0`}
-        />
-      );
-    }
-    
-    return <span className="text-lg">{emoji}</span>;
-  };
-
-  const isCustomPersonality = (personalityId) => {
-    return customPersonalities.some(p => p.id === personalityId);
-  };
-
-  const startProactiveMessaging = () => {
-    if (!proactiveEnabled || !currentPersonality || !lastMessageTimes[currentPersonality]) {
-      console.log('Proactive messaging not started:', { proactiveEnabled, currentPersonality, lastMessageTime: !!lastMessageTimes[currentPersonality] });
-      return;
-    }
-    
-    // Clear any existing timer for this personality
-    if (proactiveTimersRef.current[currentPersonality]) {
-      clearInterval(proactiveTimersRef.current[currentPersonality]);
-    }
-    
-    console.log('Starting proactive messaging for', currentPersonality);
-    
-    // Check immediately on start, then every 2 minutes for more responsive behavior
-    checkAndSendProactive();
-    
-    proactiveTimersRef.current[currentPersonality] = setInterval(async () => {
-      checkAndSendProactive();
-    }, 2 * 60 * 1000); // Check every 2 minutes
-  };
-
-  const checkAndSendProactive = async () => {
-    if (!proactiveEnabled || !currentPersonality || !lastMessageTimes[currentPersonality]) return;
-    
-    try {
-      console.log('Checking proactive timing for', currentPersonality, 'last message:', lastMessageTimes[currentPersonality]);
-      
-      const response = await axios.get(
-        `${API}/should_send_proactive/${currentPersonality}?last_message_time=${encodeURIComponent(lastMessageTimes[currentPersonality])}`
-      );
-      
-      console.log('Proactive check result:', response.data);
-      
-      if (response.data.should_send) {
-        console.log('Sending proactive message for', currentPersonality);
-        await sendProactiveMessage();
-      }
-    } catch (error) {
-      console.error('Error checking proactive timing:', error);
-    }
-  };
-
-  const sendProactiveMessage = async () => {
-    if (!proactiveEnabled || !currentPersonality) return;
-    
-    try {
-      console.log('Generating proactive message for', currentPersonality);
-      
-      const customPersonality = customPersonalities.find(p => p.id === currentPersonality);
-      const currentMessages = conversations[currentPersonality] || [];
-      
-      const requestData = {
-        personality: currentPersonality,
-        custom_personalities: customPersonalities,
-        conversation_history: currentMessages.slice(-6), // Last 6 messages for context
-        time_since_last_message: lastMessageTimes[currentPersonality] ? 
-          Math.floor((Date.now() - new Date(lastMessageTimes[currentPersonality]).getTime()) / (1000 * 60)) : 0
-      };
-
-      if (customPersonality) {
-        requestData.custom_prompt = customPersonality.prompt;
-      }
-
-      const response = await axios.post(`${API}/proactive_message`, requestData, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const proactiveMessage = {
-        role: 'assistant',
-        content: response.data.response,
-        personality: response.data.personality_used,
-        image: response.data.image,
-        imagePrompt: response.data.image_prompt,
-        isProactive: true, // Mark as proactive message
-        timestamp: new Date().toISOString()
-      };
-
-      console.log('Proactive message generated:', proactiveMessage.content.substring(0, 50) + '...');
-      
-      setConversations(prev => ({
-        ...prev,
-        [currentPersonality]: [...(prev[currentPersonality] || []), proactiveMessage]
-      }));
-      
-      const newLastMessageTimes = {
-        ...lastMessageTimes,
-        [currentPersonality]: proactiveMessage.timestamp
-      };
-      setLastMessageTimes(newLastMessageTimes);
-      localStorage.setItem('lastMessageTimes', JSON.stringify(newLastMessageTimes));
-      
-      // Send notification for proactive message
-      sendMessageNotification(proactiveMessage.content, proactiveMessage.personality);
-
-    } catch (error) {
-      console.error('Error sending proactive message:', error);
-    }
-  };
-
-  const generateOpeningMessage = async (personalityId) => {
-    const customPersonality = customPersonalities.find(p => p.id === personalityId);
-    
-    if (!customPersonality || !customPersonality.scenario) {
-      return; // No scenario, no opening message needed
-    }
-    
-    try {
-      const requestData = {
-        messages: [],
-        personality: personalityId,
-        custom_personalities: customPersonalities,
-        custom_prompt: customPersonality.prompt,
-        max_tokens: 300,
-        temperature: 0.8
-      };
-
-      const response = await axios.post(`${API}/opening_message`, requestData, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const openingMessage = {
-        role: 'assistant',
-        content: response.data.response,
-        personality: response.data.personality_used,
-        image: response.data.image,
-        imagePrompt: response.data.image_prompt,
-        isOpening: true, // Mark as opening message
-        timestamp: new Date().toISOString()
-      };
-
-      setConversations(prev => ({
-        ...prev,
-        [personalityId]: [openingMessage]
-      }));
-
-      setLastMessageTimes(prev => ({
-        ...prev,
-        [personalityId]: openingMessage.timestamp
-      }));
-
-      // Send notification for opening message
-      sendMessageNotification(openingMessage, personalityId);
-
-    } catch (error) {
-      console.error('Error generating opening message:', error);
-    }
-  };
-
-  const requestNotificationPermission = async () => {
-    if ('Notification' in window) {
-      try {
-        const permission = await Notification.requestPermission();
-        setNotificationPermission(permission);
-        
-        if (permission === 'granted') {
-          // Show a welcome notification
-          showNotification(
-            'Notifications Enabled! 🔔',
-            'You\'ll now receive notifications when your AI companions message you.',
-            '🤖'
-          );
-        }
-        
-        return permission;
-      } catch (error) {
-        console.error('Error requesting notification permission:', error);
-        setNotificationPermission('denied');
-        return 'denied';
-      }
-    } else {
-      console.log('Notifications not supported in this browser');
-      setNotificationPermission('unsupported');
-      return 'unsupported';
-    }
-  };
-
-  const showNotification = (title, body, icon = '🤖', tag = null) => {
-    if (!notificationsEnabled || notificationPermission !== 'granted') {
-      return;
-    }
-
-    // Don't show notifications if the page is visible and focused
-    if (!document.hidden && document.hasFocus && document.hasFocus()) {
-      return;
-    }
-
-    try {
-      const notification = new Notification(title, {
-        body: body,
-        icon: icon === '🤖' ? '/favicon.ico' : icon,
-        badge: '/favicon.ico',
-        tag: tag || 'ai-companion-message',
-        requireInteraction: false,
-        silent: false,
-        vibrate: [200, 100, 200],
-        data: {
-          timestamp: Date.now(),
-          personality: currentPersonality
-        }
-      });
-
-      // Auto-close notification after 5 seconds
-      setTimeout(() => {
-        notification.close();
-      }, 5000);
-
-      // Focus window when notification is clicked
-      notification.onclick = function() {
-        window.focus();
-        this.close();
-      };
-
-    } catch (error) {
-      console.error('Error showing notification:', error);
-    }
-  };
-
-  const sendMessageNotification = (message, personalityId) => {
-    if (!notificationsEnabled || notificationPermission !== 'granted') {
-      return;
-    }
-
-    const personalityDisplay = getPersonalityDisplay(personalityId);
-    const emoji = getPersonalityEmoji(personalityId);
-    
-    // Truncate long messages for notification
-    const truncatedMessage = message.length > 100 
-      ? message.substring(0, 100) + '...' 
-      : message;
-
-    const title = message.isProactive 
-      ? `${emoji} ${personalityDisplay} reached out to you!`
-      : `${emoji} ${personalityDisplay} replied`;
-
-    showNotification(
-      title,
-      truncatedMessage,
-      emoji,
-      `message-${personalityId}-${Date.now()}`
+  const handleTagToggle = (tag) => {
+    setSelectedTagFilters(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     );
   };
 
-  const toggleNotifications = async () => {
-    if (!notificationsEnabled && notificationPermission !== 'granted') {
-      const permission = await requestNotificationPermission();
-      if (permission === 'granted') {
-        setNotificationsEnabled(true);
-        localStorage.setItem('notificationsEnabled', 'true');
-      }
-    } else {
-      const newState = !notificationsEnabled;
-      setNotificationsEnabled(newState);
-      localStorage.setItem('notificationsEnabled', newState.toString());
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-6 text-white">Discover AI Companions</h1>
       
-      if (newState && notificationPermission === 'granted') {
-        showNotification(
-          'Notifications Re-enabled! 🔔',
-          'You\'ll receive notifications for new messages.',
-          '✅'
-        );
-      }
-    }
-  };
-
-  const deleteConversation = (personalityId) => {
-    if (window.confirm(`Are you sure you want to delete your entire conversation with ${getPersonalityDisplay(personalityId)}?`)) {
-      const newConversations = { ...conversations };
-      delete newConversations[personalityId];
-      setConversations(newConversations);
-      
-      const newLastMessageTimes = { ...lastMessageTimes };
-      delete newLastMessageTimes[personalityId];
-      setLastMessageTimes(newLastMessageTimes);
-      
-      // Clear proactive timer for this personality
-      if (proactiveTimersRef.current[personalityId]) {
-        clearInterval(proactiveTimersRef.current[personalityId]);
-        delete proactiveTimersRef.current[personalityId];
-      }
-      
-      // If we're currently viewing this conversation, go back to home
-      if (currentPersonality === personalityId) {
-        setCurrentPersonality(null);
-      }
-    }
-  };
-
-  const deleteMessageAndRevert = (personalityId, messageIndex) => {
-    if (window.confirm('Delete this message and revert the conversation to this point?')) {
-      const messages = conversations[personalityId] || [];
-      const newMessages = messages.slice(0, messageIndex);
-      setConversations(prev => ({
-        ...prev,
-        [personalityId]: newMessages
-      }));
-    }
-  };
-
-
-
-  const triggerProactiveMessage = async () => {
-    console.log('Manually triggering proactive message');
-    await sendProactiveMessage();
-  };
-
-
-  const getLastMessage = (personalityId) => {
-    const messages = conversations[personalityId] || [];
-    if (messages.length === 0) return 'No messages yet';
-    const lastMessage = messages[messages.length - 1];
-    const preview = lastMessage.content.length > 50 
-      ? lastMessage.content.substring(0, 50) + '...' 
-      : lastMessage.content;
-    return lastMessage.role === 'user' ? `You: ${preview}` : preview;
-  };
-
-  // Enhanced Card Component
-  const PersonalityCard = ({ personality, isPublic = false, onEdit, onDelete, onChat }) => (
-    <div className="group">
-      <div 
-        onClick={() => onChat(personality.id)}
-        className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 cursor-pointer hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl relative"
-      >
-        {isPublic && (
-          <div className="absolute top-4 right-4 flex gap-2">
-            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">🌍 Public</span>
-            {personality.creator_id === userId && (
-              <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Your Creation</span>
-            )}
-          </div>
-        )}
-        {!isPublic && isCustomPersonality(personality.id) && (
-          <div className="absolute top-4 right-4">
-            <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">🔒 Private</span>
-          </div>
-        )}
-        
-        <div className="flex items-start gap-4 mb-4">
-          <PersonalityAvatar personalityId={personality.id} size="large" />
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-white truncate">{personality.name}</h3>
-            <p className="text-white/80 text-sm mb-2">{personality.description}</p>
-            {personality.scenario && (
-              <p className="text-white/60 text-xs italic truncate">
-                📍 {personality.scenario.substring(0, 80)}...
-              </p>
-            )}
-            {isPublic && personality.tags && personality.tags.length > 0 && (
-              <div className="flex gap-1 mt-2 flex-wrap">
-                {personality.tags.slice(0, 3).map((tag, idx) => (
-                  <span key={idx} className="text-xs bg-blue-500/20 text-blue-200 px-2 py-1 rounded">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-          
-          {(onEdit || onDelete) && (
-            <div className="opacity-0 group-hover:opacity-100 flex flex-col gap-1 transition-all">
-              {onEdit && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(personality);
-                  }}
-                  className="bg-blue-500/80 hover:bg-blue-600/80 text-white p-2 rounded-lg transition-colors"
-                  title="Edit personality"
-                >
-                  ✏️
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(personality.id);
-                  }}
-                  className="bg-red-500/80 hover:bg-red-600/80 text-white p-2 rounded-lg transition-colors"
-                  title="Delete"
-                >
-                  🗑️
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-        
-        <div className="text-white/70 text-sm">
-          <p className="truncate">{getLastMessage(personality.id)}</p>
-          <p className="text-xs text-white/50 mt-1">
-            {lastMessageTimes[personality.id] ? new Date(lastMessageTimes[personality.id]).toLocaleDateString() : 'Never'}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-
-  const getUnreadCount = (personalityId) => {
-    // For now, return 0. In future could track unread messages
-    return 0;
-  };
-
-  // Discovery Page Component
-  const DiscoveryPage = () => {
-    const [availableCategories, setAvailableCategories] = useState([]);
-    
-    useEffect(() => {
-      loadCategories();
-    }, []);
-    
-    const loadCategories = async () => {
-      try {
-        const response = await axios.get(`${API}/personalities/tags`);
-        setAvailableCategories(response.data.categories || []);
-      } catch (error) {
-        console.error('Error loading categories:', error);
-      }
-    };
-    
-    const handleTagFilterToggle = (tag) => {
-      setDiscoveryTagFilters(prev => 
-        prev.includes(tag) 
-          ? prev.filter(t => t !== tag)
-          : [...prev, tag]
-      );
-    };
-    
-    const clearFilters = () => {
-      setDiscoverySearchTerm('');
-      setDiscoveryGenderFilter('');
-      setDiscoveryTagFilters([]);
-    };
-    
-    return (
-      <div className="space-y-6">
-        {/* Search and Filters */}
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
-          <h2 className="text-xl font-bold text-white mb-4">🌍 Discover AI Personalities</h2>
-          
-          {/* Search Bar */}
-          <div className="mb-4">
+      {/* Search and Filters */}
+      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Search */}
+          <div>
+            <label className="block text-white/80 mb-1 text-sm">Search</label>
             <input
               type="text"
-              value={discoverySearchTerm}
-              onChange={(e) => setDiscoverySearchTerm(e.target.value)}
-              placeholder="Search personalities..."
-              className="w-full p-3 bg-white/20 backdrop-blur-md text-white placeholder-white/60 border border-white/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name or description..."
+              className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white"
             />
           </div>
           
           {/* Gender Filter */}
-          <div className="mb-4">
-            <label className="block text-white text-sm font-medium mb-2">Filter by Gender:</label>
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => setDiscoveryGenderFilter('')}
-                className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                  discoveryGenderFilter === '' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setDiscoveryGenderFilter('female')}
-                className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                  discoveryGenderFilter === 'female' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
-              >
-                👩 Female
-              </button>
-              <button
-                onClick={() => setDiscoveryGenderFilter('male')}
-                className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                  discoveryGenderFilter === 'male' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
-              >
-                👨 Male
-              </button>
-              <button
-                onClick={() => setDiscoveryGenderFilter('non-binary')}
-                className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                  discoveryGenderFilter === 'non-binary' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
-              >
-                ⚧️ Non-Binary
-              </button>
-              <button
-                onClick={() => setDiscoveryGenderFilter('other')}
-                className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                  discoveryGenderFilter === 'other' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
-              >
-                🌈 Other
-              </button>
-            </div>
+          <div>
+            <label className="block text-white/80 mb-1 text-sm">Gender</label>
+            <select
+              value={genderFilter}
+              onChange={(e) => setGenderFilter(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-white"
+            >
+              <option value="">All Genders</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="neutral">Neutral</option>
+            </select>
           </div>
           
-          {/* Category Filters */}
-          {availableCategories.length > 0 && (
-            <div className="mb-4">
-              <label className="block text-white text-sm font-medium mb-2">Filter by Tags:</label>
-              <div className="max-h-48 overflow-y-auto space-y-3">
-                {availableCategories.map((category) => (
-                  <div key={category.category}>
-                    <h4 className="text-white/80 font-medium mb-1">{category.category}</h4>
-                    <div className="flex gap-1 flex-wrap">
-                      {category.tags.map((tag) => (
-                        <button
-                          key={tag}
-                          onClick={() => handleTagFilterToggle(tag)}
-                          className={`px-2 py-1 rounded text-xs transition-colors ${
-                            discoveryTagFilters.includes(tag)
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-white/20 text-white hover:bg-white/30'
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Active Filters and Clear */}
-          {(discoverySearchTerm || discoveryGenderFilter || discoveryTagFilters.length > 0) && (
-            <div className="flex items-center justify-between">
-              <div className="text-white/70 text-sm">
-                {publicPersonalities.length} personalities found
-              </div>
-              <button
-                onClick={clearFilters}
-                className="bg-red-500/80 hover:bg-red-600/80 text-white px-3 py-1 rounded text-sm transition-colors"
-              >
-                Clear Filters
-              </button>
-            </div>
-          )}
-        </div>
-        
-        {/* Public Personalities Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {publicPersonalities.map((personality) => (
-            <PersonalityCard
-              key={personality.id}
-              personality={personality}
-              isPublic={true}
-              onChat={async (personalityId) => {
-                // Add public personality to custom personalities temporarily for chat
-                const existingPersonality = customPersonalities.find(p => p.id === personalityId);
-                if (!existingPersonality) {
-                  const updatedCustomPersonalities = [...customPersonalities, personality];
-                  setCustomPersonalities(updatedCustomPersonalities);
-                }
-                
-                setCurrentPersonality(personalityId);
-                // Generate opening message for public personalities if they have scenarios
-                const currentMessages = conversations[personalityId] || [];
-                if (currentMessages.length === 0 && personality.scenario) {
-                  await generateOpeningMessage(personalityId);
-                }
-              }}
-            />
-          ))}
-        </div>
-        
-        {/* Empty State */}
-        {publicPersonalities.length === 0 && (
-          <div className="text-center text-white/60 py-12">
-            <h3 className="text-xl mb-2">No personalities found</h3>
-            <p>Try adjusting your filters or create your own personality to share!</p>
+          {/* Clear Filters */}
+          <div className="flex items-end">
             <button
               onClick={() => {
-                setEditingPersonality(null);
-                setShowCreator(true);
+                setSearchTerm('');
+                setGenderFilter('');
+                setSelectedTagFilters([]);
               }}
-              className="bg-green-500/80 hover:bg-green-600/80 text-white px-4 py-2 rounded-lg transition-colors mt-4"
+              className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors"
             >
-              ➕ Create & Share Personality
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Profile Page Component  
-  const ProfilePage = () => (
-    <div className="space-y-6">
-      {/* Profile Header */}
-      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
-        <h2 className="text-2xl font-bold text-white mb-4">👤 Your Profile</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-400">{customPersonalities.length}</div>
-            <div className="text-white/70">Custom Personalities</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-green-400">{userPersonalities.length}</div>
-            <div className="text-white/70">Public Creations</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-purple-400">
-              {Object.keys(conversations).length}
-            </div>
-            <div className="text-white/70">Active Conversations</div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Settings */}
-      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
-        <h3 className="text-xl font-bold text-white mb-4">⚙️ Settings</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-white font-medium">Notifications</div>
-              <div className="text-white/60 text-sm">Get notified when AI companions message you</div>
-            </div>
-            <button
-              onClick={toggleNotifications}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                notificationsEnabled && notificationPermission === 'granted'
-                  ? 'bg-green-500/80 hover:bg-green-600/80 text-white' 
-                  : 'bg-gray-500/80 hover:bg-gray-600/80 text-white'
-              }`}
-            >
-              {notificationPermission === 'granted' && notificationsEnabled ? 'Enabled' : 'Disabled'}
-            </button>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-white font-medium">Proactive Messaging</div>
-              <div className="text-white/60 text-sm">AI companions will reach out to you automatically</div>
-            </div>
-            <button
-              onClick={() => setProactiveEnabled(!proactiveEnabled)}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                proactiveEnabled 
-                  ? 'bg-green-500/80 hover:bg-green-600/80 text-white' 
-                  : 'bg-gray-500/80 hover:bg-gray-600/80 text-white'
-              }`}
-            >
-              {proactiveEnabled ? 'Enabled' : 'Disabled'}
+              Clear Filters
             </button>
           </div>
         </div>
-      </div>
-      
-      {/* Your Public Personalities */}
-      {userPersonalities.length > 0 && (
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
-          <h3 className="text-xl font-bold text-white mb-4">🌍 Your Public Personalities</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {userPersonalities.map((personality) => (
-              <PersonalityCard
-                key={personality.id}
-                personality={personality}
-                isPublic={true}
-                onChat={(personalityId) => {
-                  // Add public personality to custom personalities temporarily for chat if needed
-                  const existingPersonality = customPersonalities.find(p => p.id === personalityId);
-                  if (!existingPersonality) {
-                    const personalityToAdd = userPersonalities.find(p => p.id === personalityId);
-                    if (personalityToAdd) {
-                      const updatedCustomPersonalities = [...customPersonalities, personalityToAdd];
-                      setCustomPersonalities(updatedCustomPersonalities);
-                    }
-                  }
-                  setCurrentPersonality(personalityId);
-                }}
-              />
+        
+        {/* Tags Filter */}
+        <div className="mt-4">
+          <label className="block text-white/80 mb-1 text-sm">Categories</label>
+          <div className="flex flex-wrap gap-2">
+            {availableTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => handleTagToggle(tag)}
+                className={`px-3 py-1 rounded-full text-sm ${
+                  selectedTagFilters.includes(tag)
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white/10 text-white/80 hover:bg-white/20'
+                }`}
+              >
+                {tag}
+              </button>
             ))}
           </div>
         </div>
-      )}
+      </div>
       
-      {/* Data Management */}
-      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
-        <h3 className="text-xl font-bold text-white mb-4">🗂️ Data Management</h3>
-        <div className="space-y-3">
-          <button
-            onClick={clearChat}
-            className="w-full bg-red-500/80 hover:bg-red-600/80 text-white p-3 rounded-lg transition-colors"
-          >
-            🗑️ Clear All Conversations
-          </button>
-          <p className="text-white/60 text-sm">
-            This will delete all your conversation history but keep your custom personalities.
-          </p>
+      {/* Results */}
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredPersonalities.length > 0 ? (
+            filteredPersonalities.map((personality) => (
+              <div 
+                key={personality.id} 
+                className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4 hover:bg-white/20 transition-colors cursor-pointer"
+                onClick={() => window.location.href = `/chat/${personality.id}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                    {personality.emoji || personality.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="text-white font-medium">{personality.name}</h3>
+                    <p className="text-white/60 text-sm">{personality.description}</p>
+                  </div>
+                </div>
+                {personality.tags && personality.tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {personality.tags.map(tag => (
+                      <span key={tag} className="bg-white/10 text-white/70 text-xs px-2 py-1 rounded-full">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12 text-white/60">
+              <p className="text-xl mb-2">No personalities found</p>
+              <p>Try adjusting your filters or create your own!</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Profile Page Component
+const ProfilePage = () => {
+  const [customPersonalities, setCustomPersonalities] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // In a real app, this would fetch from an API with authentication
+    // For this demo, we'll use localStorage
+    const fetchCustomPersonalities = () => {
+      try {
+        const storedPersonalities = localStorage.getItem('customPersonalities');
+        setCustomPersonalities(storedPersonalities ? JSON.parse(storedPersonalities) : []);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching custom personalities:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchCustomPersonalities();
+  }, []);
+
+  const handleDeletePersonality = (id) => {
+    const updatedPersonalities = customPersonalities.filter(p => p.id !== id);
+    setCustomPersonalities(updatedPersonalities);
+    localStorage.setItem('customPersonalities', JSON.stringify(updatedPersonalities));
+  };
+
+  const handleClearAllData = () => {
+    if (window.confirm('Are you sure you want to clear all your data? This will delete all conversations and custom personalities.')) {
+      localStorage.clear();
+      setCustomPersonalities([]);
+      window.location.reload();
+    }
+  };
+
+  return (
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-6 text-white">Your Profile</h1>
+      
+      {/* User Settings */}
+      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 mb-6">
+        <h2 className="text-xl font-semibold text-white mb-4">Settings</h2>
+        
+        <div className="space-y-4">
+          <div>
+            <button
+              onClick={handleClearAllData}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Clear All Data
+            </button>
+            <p className="text-white/60 text-sm mt-1">
+              This will delete all your conversation history and custom personalities.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  );
-
-  // Tab Navigation Component - Now optimized for bottom mobile navigation
-  const TabNavigation = () => (
-    <div className="mobile-bottom-nav bg-white/10 backdrop-blur-md border-t border-white/20 p-2 md:bg-white/10 md:border md:border-white/20 md:rounded-2xl md:mb-6 md:border-t-0">
-      <div className="flex gap-2">
-        <button
-          onClick={() => setActiveTab('discover')}
-          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-center ${
-            activeTab === 'discover'
-              ? 'bg-blue-500 text-white'
-              : 'text-white/70 hover:text-white hover:bg-white/10'
-          }`}
-        >
-          <div className="flex flex-col items-center gap-1 md:flex-row md:justify-center md:gap-2">
-            <span className="text-lg md:text-base">🌍</span>
-            <span className="text-xs md:text-sm">Discover</span>
+      
+      {/* Custom Personalities */}
+      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6">
+        <h2 className="text-xl font-semibold text-white mb-4">Your Custom Personalities</h2>
+        
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
           </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('chats')}
-          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-center ${
-            activeTab === 'chats'
-              ? 'bg-blue-500 text-white'
-              : 'text-white/70 hover:text-white hover:bg-white/10'
-          }`}
-        >
-          <div className="flex flex-col items-center gap-1 md:flex-row md:justify-center md:gap-2">
-            <span className="text-lg md:text-base">💬</span>
-            <span className="text-xs md:text-sm">My Chats</span>
+        ) : customPersonalities.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {customPersonalities.map((personality) => (
+              <div 
+                key={personality.id} 
+                className="bg-white/5 border border-white/10 rounded-lg p-4 group"
+              >
+                <div className="flex justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-lg">
+                      {personality.emoji || personality.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">{personality.name}</h3>
+                      <p className="text-white/60 text-xs">{personality.description}</p>
+                    </div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleDeletePersonality(personality.id)}
+                      className="text-red-400 hover:text-red-300 p-1"
+                      title="Delete personality"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+                {personality.tags && personality.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {personality.tags.map(tag => (
+                      <span key={tag} className="bg-white/10 text-white/70 text-xs px-2 py-0.5 rounded-full">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        </button>
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-center ${
-            activeTab === 'profile'
-              ? 'bg-blue-500 text-white'
-              : 'text-white/70 hover:text-white hover:bg-white/10'
-          }`}
-        >
-          <div className="flex flex-col items-center gap-1 md:flex-row md:justify-center md:gap-2">
-            <span className="text-lg md:text-base">👤</span>
-            <span className="text-xs md:text-sm">Profile</span>
+        ) : (
+          <div className="text-center py-6 text-white/60">
+            <p>You haven't created any custom personalities yet.</p>
+            <p className="mt-2">Click the + button to create your first one!</p>
           </div>
-        </button>
+        )}
       </div>
     </div>
   );
+};
 
-  // Enhanced Home Page with Tab Navigation
-  const TabNavigationHomePage = () => (
+// Tab Navigation Component
+const TabNavigation = ({ activeTab, setActiveTab }) => (
+  <div className="mobile-bottom-nav bg-white/10 backdrop-blur-md border-t border-white/20 p-2 md:bg-white/10 md:border md:border-white/20 md:rounded-2xl md:mb-6 md:border-t-0">
+    <div className="flex gap-2">
+      <button
+        onClick={() => setActiveTab('discover')}
+        className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-center ${
+          activeTab === 'discover'
+            ? 'bg-blue-500 text-white'
+            : 'text-white/70 hover:text-white hover:bg-white/10'
+        }`}
+      >
+        <div className="flex flex-col items-center gap-1 md:flex-row md:justify-center md:gap-2">
+          <span className="text-lg md:text-base">🌍</span>
+          <span className="text-xs md:text-sm">Discover</span>
+        </div>
+      </button>
+      <button
+        onClick={() => setActiveTab('chats')}
+        className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-center ${
+          activeTab === 'chats'
+            ? 'bg-blue-500 text-white'
+            : 'text-white/70 hover:text-white hover:bg-white/10'
+        }`}
+      >
+        <div className="flex flex-col items-center gap-1 md:flex-row md:justify-center md:gap-2">
+          <span className="text-lg md:text-base">💬</span>
+          <span className="text-xs md:text-sm">My Chats</span>
+        </div>
+      </button>
+      <button
+        onClick={() => setActiveTab('profile')}
+        className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-center ${
+          activeTab === 'profile'
+            ? 'bg-blue-500 text-white'
+            : 'text-white/70 hover:text-white hover:bg-white/10'
+        }`}
+      >
+        <div className="flex flex-col items-center gap-1 md:flex-row md:justify-center md:gap-2">
+          <span className="text-lg md:text-base">👤</span>
+          <span className="text-xs md:text-sm">Profile</span>
+        </div>
+      </button>
+    </div>
+  </div>
+);
+
+// Main App Component
+function App() {
+  const [activeTab, setActiveTab] = useState('chats');
+  const [showCreator, setShowCreator] = useState(false);
+  const [editingPersonality, setEditingPersonality] = useState(null);
+  const [personalities, setPersonalities] = useState([]);
+  const [customPersonalities, setCustomPersonalities] = useState([]);
+  const [conversations, setConversations] = useState({});
+  const [selectedPersonality, setSelectedPersonality] = useState(null);
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const [lastMessageTimes, setLastMessageTimes] = useState({});
+
+  // Load personalities from API
+  useEffect(() => {
+    const fetchPersonalities = async () => {
+      try {
+        const response = await axios.get(`${API}/personalities`);
+        setPersonalities(response.data);
+      } catch (error) {
+        console.error('Error fetching personalities:', error);
+      }
+    };
+
+    fetchPersonalities();
+  }, []);
+
+  // Load custom personalities from localStorage
+  useEffect(() => {
+    const storedPersonalities = localStorage.getItem('customPersonalities');
+    if (storedPersonalities) {
+      setCustomPersonalities(JSON.parse(storedPersonalities));
+    }
+
+    const storedConversations = localStorage.getItem('conversations');
+    if (storedConversations) {
+      setConversations(JSON.parse(storedConversations));
+    }
+
+    const storedUnreadCounts = localStorage.getItem('unreadCounts');
+    if (storedUnreadCounts) {
+      setUnreadCounts(JSON.parse(storedUnreadCounts));
+    }
+
+    const storedLastMessageTimes = localStorage.getItem('lastMessageTimes');
+    if (storedLastMessageTimes) {
+      setLastMessageTimes(JSON.parse(storedLastMessageTimes));
+    }
+  }, []);
+
+  // Save custom personalities to localStorage when they change
+  useEffect(() => {
+    if (customPersonalities.length > 0) {
+      localStorage.setItem('customPersonalities', JSON.stringify(customPersonalities));
+    }
+  }, [customPersonalities]);
+
+  // Save conversations to localStorage when they change
+  useEffect(() => {
+    if (Object.keys(conversations).length > 0) {
+      localStorage.setItem('conversations', JSON.stringify(conversations));
+    }
+  }, [conversations]);
+
+  // Save unread counts to localStorage when they change
+  useEffect(() => {
+    if (Object.keys(unreadCounts).length > 0) {
+      localStorage.setItem('unreadCounts', JSON.stringify(unreadCounts));
+    }
+  }, [unreadCounts]);
+
+  // Save last message times to localStorage when they change
+  useEffect(() => {
+    if (Object.keys(lastMessageTimes).length > 0) {
+      localStorage.setItem('lastMessageTimes', JSON.stringify(lastMessageTimes));
+    }
+  }, [lastMessageTimes]);
+
+  const handleSavePersonality = (personalityData) => {
+    const newPersonality = {
+      ...personalityData,
+      id: personalityData.id || `custom-${Date.now()}`
+    };
+
+    if (editingPersonality) {
+      // Update existing personality
+      setCustomPersonalities(prev => 
+        prev.map(p => p.id === newPersonality.id ? newPersonality : p)
+      );
+    } else {
+      // Add new personality
+      setCustomPersonalities(prev => [...prev, newPersonality]);
+    }
+
+    setEditingPersonality(null);
+  };
+
+  const deleteConversation = (personalityId) => {
+    if (window.confirm('Are you sure you want to delete this conversation?')) {
+      setConversations(prev => {
+        const newConversations = { ...prev };
+        delete newConversations[personalityId];
+        return newConversations;
+      });
+      
+      setUnreadCounts(prev => {
+        const newCounts = { ...prev };
+        delete newCounts[personalityId];
+        return newCounts;
+      });
+      
+      setLastMessageTimes(prev => {
+        const newTimes = { ...prev };
+        delete newTimes[personalityId];
+        return newTimes;
+      });
+    }
+  };
+
+  const getUnreadCount = (personalityId) => {
+    return unreadCounts[personalityId] || 0;
+  };
+
+  const getLastMessage = (personalityId) => {
+    const convo = conversations[personalityId];
+    if (!convo || convo.length === 0) return 'No messages yet';
+    
+    const lastMessage = convo[convo.length - 1];
+    return lastMessage.content.length > 50 
+      ? `${lastMessage.content.substring(0, 50)}...` 
+      : lastMessage.content;
+  };
+
+  // If a personality is selected, show the chat page
+  if (selectedPersonality) {
+    return (
+      <ChatPage
+        personality={selectedPersonality}
+        initialMessages={conversations[selectedPersonality.id] || []}
+        onBack={() => {
+          setSelectedPersonality(null);
+          // Mark as read when leaving chat
+          setUnreadCounts(prev => ({
+            ...prev,
+            [selectedPersonality.id]: 0
+          }));
+        }}
+        onMessageSent={(messages) => {
+          setConversations(prev => ({
+            ...prev,
+            [selectedPersonality.id]: messages
+          }));
+          setLastMessageTimes(prev => ({
+            ...prev,
+            [selectedPersonality.id]: new Date().toISOString()
+          }));
+        }}
+      />
+    );
+  }
+
+  // Main app with tabs
+  return (
     <div className="min-h-screen bg-black pb-20 md:pb-0">
       <div className="container mx-auto max-w-6xl p-4">
         {/* Header */}
@@ -1520,7 +803,7 @@ const ChatInterface = () => {
 
         {/* Tab Navigation - Hidden on mobile, shown on desktop at top */}
         <div className="hidden md:block">
-          <TabNavigation />
+          <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
 
         {/* Tab Content */}
@@ -1545,335 +828,16 @@ const ChatInterface = () => {
       
       {/* Mobile Bottom Tab Navigation - Only shown on mobile */}
       <div className="md:hidden">
-        <TabNavigation />
+        <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
-    </div>
-  );
-          <div className="text-center text-white/60 mt-12">
-            <h2 className="text-2xl mb-4">Welcome to your AI Companion App! 🤖</h2>
-            <p className="mb-4">Loading your AI companions...</p>
-          </div>
-        )}
 
-        {personalities.length > 0 && (
-          <div className="text-center text-white/60 mt-8">
-            <p className="text-sm">
-              ✨ Create custom personalities • 🎨 Generate images • 💬 Proactive messaging • 🔔 Smart notifications
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // Main render logic
-                        <span>🔔 Notifications</span>
-                        <span className="text-xs">
-                          {notificationPermission === 'granted' && notificationsEnabled ? 'ON' : 'OFF'}
-                        </span>
-                      </button>
-
-                      <button
-                        onClick={() => setProactiveEnabled(!proactiveEnabled)}
-                        className={`w-full flex items-center justify-between p-2 rounded transition-colors ${
-                          proactiveEnabled 
-                            ? 'bg-green-500/20 text-green-300' 
-                            : 'bg-gray-500/20 text-gray-300'
-                        }`}
-                      >
-                        <span>💬 Proactive Messages</span>
-                        <span className="text-xs">{proactiveEnabled ? 'ON' : 'OFF'}</span>
-                      </button>
-
-                      {/* Custom Personality Edit Option */}
-                      {isCustomPersonality(currentPersonality) && (
-                        <button
-                          onClick={() => {
-                            const personality = customPersonalities.find(p => p.id === currentPersonality);
-                            setEditingPersonality(personality);
-                            setShowCreator(true);
-                            setShowDropdown(false);
-                          }}
-                          className="w-full flex items-center justify-between p-2 rounded bg-blue-500/20 text-blue-300 transition-colors hover:bg-blue-500/30"
-                        >
-                          <span>✏️ Edit Personality</span>
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => {
-                          deleteConversation(currentPersonality);
-                          setShowDropdown(false);
-                        }}
-                        className="w-full flex items-center justify-between p-2 rounded bg-red-500/20 text-red-300 transition-colors hover:bg-red-500/30"
-                      >
-                        <span>🗑️ Delete Conversation</span>
-                      </button>
-                    </div>
-
-                    {/* Close Dropdown */}
-                    <button
-                      onClick={() => setShowDropdown(false)}
-                      className="w-full text-center text-white/60 text-sm pt-2 border-t border-white/20"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-                    <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Custom</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <div className="flex gap-2">
-                <button 
-                  onClick={toggleNotifications}
-                  className={`px-3 py-2 rounded-lg transition-colors text-sm ${
-                    notificationsEnabled && notificationPermission === 'granted'
-                      ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white' 
-                      : 'bg-gray-500/80 hover:bg-gray-600/80 text-white'
-                  }`}
-                  title="Toggle notifications"
-                >
-                  {notificationPermission === 'granted' && notificationsEnabled ? '🔔' : '🔕'}
-                </button>
-                <button 
-                  onClick={() => setProactiveEnabled(!proactiveEnabled)}
-                  className={`px-3 py-2 rounded-lg transition-colors text-sm ${
-                    proactiveEnabled 
-                      ? 'bg-green-500/80 hover:bg-green-600/80 text-white' 
-                      : 'bg-gray-500/80 hover:bg-gray-600/80 text-white'
-                  }`}
-                  title="Toggle proactive messaging"
-                >
-                  {proactiveEnabled ? '🔔' : '🔕'}
-                </button>
-                {proactiveEnabled && (
-                  <button 
-                    onClick={triggerProactiveMessage}
-                    className="bg-purple-500/80 hover:bg-purple-600/80 text-white px-3 py-2 rounded-lg transition-colors text-sm"
-                    title="Trigger proactive message"
-                  >
-                    💬
-                  </button>
-                )}
-                <button 
-                  onClick={() => deleteConversation(currentPersonality)}
-                  className="bg-red-500/80 hover:bg-red-600/80 text-white px-3 py-2 rounded-lg transition-colors text-sm"
-                  title="Delete conversation"
-                >
-                  🗑️
-                </button>
-                {isCustomPersonality(currentPersonality) && (
-                  <button
-                    onClick={() => {
-                      const p = customPersonalities.find(p => p.id === currentPersonality);
-                      setEditingPersonality(p);
-                      setShowCreator(true);
-                    }}
-                    className="bg-blue-500/80 hover:bg-blue-600/80 text-white px-3 py-2 rounded-lg transition-colors text-sm"
-                    title="Edit personality"
-                  >
-                    ✏️
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Messages Container */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {currentMessages.length === 0 && (
-              <div className="text-center text-white/60 mt-8">
-                <h2 className="text-xl mb-2">Start a conversation with {getPersonalityDisplay(currentPersonality)}! 💬</h2>
-                <p>Type a message below to begin chatting.</p>
-                <p className="mt-2 text-sm">
-                  💡 Try: "Hello!" • "How are you?" • "Tell me about yourself" • "Draw me a picture"
-                </p>
-              </div>
-            )}
-            
-            {currentMessages.map((message, index) => (
-              <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs sm:max-w-md lg:max-w-lg xl:max-w-xl rounded-2xl p-4 relative group ${
-                  message.role === 'user' 
-                    ? 'bg-blue-500 text-white ml-12' 
-                    : 'bg-white/90 text-gray-800 mr-12'
-                }`}>
-                  {message.role === 'user' && (
-                    <button
-                      onClick={() => deleteMessageAndRevert(currentPersonality, index)}
-                      className="absolute -top-2 -left-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Delete message and revert conversation"
-                    >
-                      ×
-                    </button>
-                  )}
-                  {message.role === 'assistant' && (
-                    <div className="text-xs text-gray-500 mb-1 flex items-center gap-2">
-                      <PersonalityAvatar personalityId={message.personality || currentPersonality} size="small" />
-                      <div className="flex items-center gap-1">
-                        {getPersonalityDisplay(message.personality || currentPersonality)}
-                        {isCustomPersonality(message.personality || currentPersonality) && (
-                          <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Custom</span>
-                        )}
-                        {message.isProactive && (
-                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">💬 Proactive</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  <div className="whitespace-pre-wrap">{message.content}</div>
-                  {message.image && (
-                    <div className="mt-3">
-                      <img 
-                        src={`data:image/jpeg;base64,${message.image}`}
-                        alt={message.imagePrompt || "Generated image"}
-                        className="max-w-full h-auto rounded-lg border border-gray-200"
-                        loading="lazy"
-                        onLoad={() => console.log('Image loaded successfully')}
-                        onError={(e) => console.log('Image load error:', e)}
-                      />
-                      {message.imagePrompt && (
-                        <p className="text-xs text-gray-500 mt-1 italic">
-                          🎨 Generated: {message.imagePrompt}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  {/* Debug display */}
-                  {message.image && (
-                    <div className="text-xs text-gray-400 mt-1">
-                      🐛 Debug: Image data length: {message.image.length}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-            
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-white/90 text-gray-800 rounded-2xl p-4 mr-12">
-                  <div className="flex items-center gap-2">
-                    <div className="typing-indicator">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                    <span className="text-sm text-gray-500">
-                      {isGeneratingImage ? 'Creating your image... 🎨' : 'Thinking...'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="mx-4 mb-2 bg-red-500/20 border border-red-500/30 text-red-200 p-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          {/* Input Container */}
-          <div className="bg-white/10 backdrop-blur-md border-t border-white/20 p-4">
-            <div className="flex gap-3">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={`Message ${getPersonalityDisplay(currentPersonality)}...`}
-                disabled={isLoading}
-                rows="2"
-                className="flex-1 bg-white/20 backdrop-blur-md text-white placeholder-white/60 border border-white/30 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-              />
-              <button 
-                onClick={handleSend} 
-                disabled={isLoading || !input.trim()}
-                className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2"
-              >
-                {isLoading ? '⏳' : '📤'} Send
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  );
-
-  // Main render logic
-  if (currentPersonality === null) {
-    return (
-      <>
-        <TabNavigationHomePage />
-        {/* Personality Creator Modal */}
-        <PersonalityCreator
-          isOpen={showCreator}
-          onClose={() => {
-            setShowCreator(false);
-            setEditingPersonality(null);
-          }}
-          onSave={handleSavePersonality}
-          editingPersonality={editingPersonality}
-        />
-      </>
-    );
-  }
-
-  return (
-    <>
-      <ChatPage 
-        conversations={conversations}
-        currentPersonality={currentPersonality}
-        setCurrentPersonality={setCurrentPersonality}
-        currentMessages={conversations[currentPersonality] || []}
-        input={input}
-        setInput={setInput}
-        handleSend={handleSend}
-        handleKeyPress={handleKeyPress}
-        isLoading={isLoading}
-        isGeneratingImage={isGeneratingImage}
-        error={error}
-        getPersonalityDisplay={getPersonalityDisplay}
-        getPersonalityImage={getPersonalityImage}
-        PersonalityAvatar={PersonalityAvatar}
-        isCustomPersonality={isCustomPersonality}
-        customPersonalities={customPersonalities}
-        setEditingPersonality={setEditingPersonality}
-        setShowCreator={setShowCreator}
-        deleteConversation={deleteConversation}
-        deleteMessageAndRevert={deleteMessageAndRevert}
-        toggleNotifications={toggleNotifications}
-        notificationsEnabled={notificationsEnabled}
-        notificationPermission={notificationPermission}
-        proactiveEnabled={proactiveEnabled}
-        setProactiveEnabled={setProactiveEnabled}
-        messagesEndRef={messagesEndRef}
-      />
       {/* Personality Creator Modal */}
       <PersonalityCreator
         isOpen={showCreator}
-        onClose={() => {
-          setShowCreator(false);
-          setEditingPersonality(null);
-        }}
+        onClose={() => setShowCreator(false)}
         onSave={handleSavePersonality}
         editingPersonality={editingPersonality}
       />
-    </>
-  );
-};
-
-function App() {
-  return (
-    <div className="App">
-      <ChatInterface />
     </div>
   );
 }
