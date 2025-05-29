@@ -1549,52 +1549,6 @@ const ChatInterface = () => {
       </div>
     </div>
   );
-
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    {getUnreadCount(p.id) > 0 && (
-                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                        {getUnreadCount(p.id)}
-                      </span>
-                    )}
-                    <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-all">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingPersonality(p);
-                          setShowCreator(true);
-                        }}
-                        className="bg-blue-500/80 hover:bg-blue-600/80 text-white p-2 rounded-lg transition-colors"
-                        title="Edit personality"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteConversation(p.id);
-                        }}
-                        className="bg-red-500/80 hover:bg-red-600/80 text-white p-2 rounded-lg transition-colors"
-                        title="Delete conversation"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-white/70 text-sm">
-                  <p className="truncate">{getLastMessage(p.id)}</p>
-                  <p className="text-xs text-white/50 mt-1">
-                    {lastMessageTimes[p.id] ? new Date(lastMessageTimes[p.id]).toLocaleDateString() : 'Never'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Welcome Message for New Users */}
-        {personalities.length === 0 && customPersonalities.length === 0 && (
           <div className="text-center text-white/60 mt-12">
             <h2 className="text-2xl mb-4">Welcome to your AI Companion App! 🤖</h2>
             <p className="mb-4">Loading your AI companions...</p>
