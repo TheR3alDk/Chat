@@ -536,12 +536,14 @@ const ChatInterface = () => {
                   : 'bg-white/90 text-gray-800 mr-12'
               }`}>
                 {message.role === 'assistant' && (
-                  <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                    {getPersonalityEmoji(message.personality || personality)}
-                    {getPersonalityDisplay(message.personality || personality)}
-                    {isCustomPersonality(message.personality || personality) && (
-                      <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Custom</span>
-                    )}
+                  <div className="text-xs text-gray-500 mb-1 flex items-center gap-2">
+                    <PersonalityAvatar personalityId={message.personality || personality} size="small" />
+                    <div className="flex items-center gap-1">
+                      {getPersonalityDisplay(message.personality || personality)}
+                      {isCustomPersonality(message.personality || personality) && (
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Custom</span>
+                      )}
+                    </div>
                   </div>
                 )}
                 <div className="whitespace-pre-wrap">{message.content}</div>
