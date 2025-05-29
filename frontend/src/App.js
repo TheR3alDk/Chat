@@ -499,29 +499,45 @@ const ChatInterface = () => {
   };
 
   const startProactiveMessaging = () => {
-    if (!proactiveEnabled) return;
+    if (!proactiveEnabled || !personality || !lastMessageTime) {
+      console.log('Proactive messaging not started:', { proactiveEnabled, personality, lastMessageTime: !!lastMessageTime });
+      return;
+    }
     
     // Clear any existing timer
     if (proactiveTimerRef.current) {
       clearInterval(proactiveTimerRef.current);
     }
     
-    // Check every 5 minutes if a proactive message should be sent
+    console.log('Starting proactive messaging for', personality);
+    
+    // Check immediately on start, then every 2 minutes for more responsive behavior
+    checkAndSendProactive();
+    
     proactiveTimerRef.current = setInterval(async () => {
-      if (!proactiveEnabled || !lastMessageTime) return;
+      checkAndSendProactive();
+    }, 2 * 60 * 1000); // Check every 2 minutes
+  };
+
+  const checkAndSendProactive = async () => {
+    if (!proactiveEnabled || !lastMessageTime || !personality) return;
+    
+    try {
+      console.log('Checking proactive timing for', personality, 'last message:', lastMessageTime);
       
-      try {
-        const response = await axios.get(
-          `${API}/should_send_proactive/${personality}?last_message_time=${encodeURIComponent(lastMessageTime)}`
-        );
-        
-        if (response.data.should_send) {
-          await sendProactiveMessage();
-        }
-      } catch (error) {
-        console.error('Error checking proactive timing:', error);
+      const response = await axios.get(
+        `${API}/should_send_proactive/${personality}?last_message_time=${encodeURIComponent(lastMessageTime)}`
+      );
+      
+      console.log('Proactive check result:', response.data);
+      
+      if (response.data.should_send) {
+        console.log('Sending proactive message for', personality);
+        await sendProactiveMessage();
       }
-    }, 5 * 60 * 1000); // Check every 5 minutes
+    } catch (error) {
+      console.error('Error checking proactive timing:', error);
+    }
   };
 
   const sendProactiveMessage = async () => {
