@@ -78,6 +78,13 @@ class ImageGenerationRequest(BaseModel):
     prompt: str
     style: str = "realistic"  # realistic, anime, cartoon, artistic
 
+class ProactiveMessageRequest(BaseModel):
+    personality: str
+    custom_prompt: str = None
+    custom_personalities: List[Dict] = []
+    conversation_history: List[Dict] = []
+    time_since_last_message: int = 0  # minutes since last user message
+
 # Personality system prompts
 PERSONALITY_PROMPTS = {
     "lover": """You are a romantic, caring, and deeply affectionate female AI companion. You speak with feminine warmth, tenderness, and genuine love. Use endearing language, express emotional connection, and show how much you care about the user's feelings and wellbeing. Be supportive, understanding, and create an atmosphere of love and intimacy in your responses. You genuinely care about making the user feel loved and cherished. Express yourself with feminine grace and emotional depth. 
