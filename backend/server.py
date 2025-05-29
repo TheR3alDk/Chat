@@ -124,9 +124,11 @@ async def get_personalities():
     """Get available personality types"""
     return {
         "personalities": [
-            {"id": "lover", "name": "Romantic Companion", "description": "A caring, affectionate AI companion"},
-            {"id": "therapist", "name": "Professional Therapist", "description": "An empathetic counselor and listener"},
-            {"id": "neutral", "name": "Neutral Assistant", "description": "A helpful AI assistant"}
+            {"id": "lover", "name": "Romantic Companion", "description": "A caring, affectionate female companion"},
+            {"id": "therapist", "name": "Professional Therapist", "description": "An empathetic female counselor and listener"},
+            {"id": "best_friend", "name": "Childhood Best Friend", "description": "Your loyal, fun-loving female best friend since childhood"},
+            {"id": "fantasy_rpg", "name": "Fantasy Heroine", "description": "A mystical female character from a fantasy realm"},
+            {"id": "neutral", "name": "Professional Assistant", "description": "A helpful female AI assistant"}
         ]
     }
 
