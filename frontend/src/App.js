@@ -428,6 +428,24 @@ const ChatInterface = () => {
     }
   };
 
+  const loadPublicPersonalities = async () => {
+    try {
+      const response = await axios.get(`${API}/personalities/public`);
+      setPublicPersonalities(response.data.personalities || []);
+    } catch (err) {
+      console.error('Failed to load public personalities:', err);
+    }
+  };
+
+  const loadUserPersonalities = async () => {
+    try {
+      const response = await axios.get(`${API}/personalities/user/${userId}`);
+      setUserPersonalities(response.data.personalities || []);
+    } catch (err) {
+      console.error('Failed to load user personalities:', err);
+    }
+  };
+
   const saveCustomPersonalities = (personalities) => {
     localStorage.setItem('customPersonalities', JSON.stringify(personalities));
     setCustomPersonalities(personalities);
