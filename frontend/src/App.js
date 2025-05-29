@@ -1455,39 +1455,48 @@ const ChatInterface = () => {
     </div>
   );
 
-  // Tab Navigation Component
+  // Tab Navigation Component - Now optimized for bottom mobile navigation
   const TabNavigation = () => (
-    <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 mb-6">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur-md border-t border-white/20 p-2 md:relative md:bg-white/10 md:border md:border-white/20 md:rounded-2xl md:mb-6 md:bottom-auto">
       <div className="flex gap-2">
         <button
           onClick={() => setActiveTab('discover')}
-          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium ${
+          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-center ${
             activeTab === 'discover'
               ? 'bg-blue-500 text-white'
               : 'text-white/70 hover:text-white hover:bg-white/10'
           }`}
         >
-          🌍 Discover
+          <div className="flex flex-col items-center gap-1 md:flex-row md:justify-center md:gap-2">
+            <span className="text-lg md:text-base">🌍</span>
+            <span className="text-xs md:text-sm">Discover</span>
+          </div>
         </button>
         <button
           onClick={() => setActiveTab('chats')}
-          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium ${
+          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-center ${
             activeTab === 'chats'
               ? 'bg-blue-500 text-white'
               : 'text-white/70 hover:text-white hover:bg-white/10'
           }`}
         >
-          💬 My Chats
+          <div className="flex flex-col items-center gap-1 md:flex-row md:justify-center md:gap-2">
+            <span className="text-lg md:text-base">💬</span>
+            <span className="text-xs md:text-sm">My Chats</span>
+          </div>
         </button>
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium ${
+          className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium text-center ${
             activeTab === 'profile'
               ? 'bg-blue-500 text-white'
               : 'text-white/70 hover:text-white hover:bg-white/10'
           }`}
         >
-          👤 Profile
+          <div className="flex flex-col items-center gap-1 md:flex-row md:justify-center md:gap-2">
+            <span className="text-lg md:text-base">👤</span>
+            <span className="text-xs md:text-sm">Profile</span>
+          </div>
         </button>
       </div>
     </div>
