@@ -379,6 +379,7 @@ const ChatInterface = () => {
   const [showCreator, setShowCreator] = useState(false);
   const [editingPersonality, setEditingPersonality] = useState(null);
   const [activeTab, setActiveTab] = useState('chats'); // 'discover', 'chats', 'profile'
+  const [proactiveEnabled, setProactiveEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState('default');
   const [lastMessageTimes, setLastMessageTimes] = useState({}); // {personalityId: timestamp}
