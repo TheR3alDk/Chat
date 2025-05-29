@@ -338,6 +338,7 @@ const ChatInterface = () => {
       const requestData = {
         messages: newMessages,
         personality: personality,
+        custom_personalities: customPersonalities, // Pass custom personalities for self-image generation
         max_tokens: 1000,
         temperature: 0.7
       };
