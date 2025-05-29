@@ -76,10 +76,11 @@ class PublicPersonality(BaseModel):
     emoji: str = ""
     customImage: str = None
     prompt: str
+    gender: str = "female"  # male, female, non-binary, other
+    tags: List[str] = []
     creator_id: str
     is_public: bool = True
     created_at: str
-    tags: List[str] = []
     usage_count: int = 0
 
 class ChatResponse(BaseModel):
