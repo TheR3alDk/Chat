@@ -636,6 +636,17 @@ const ChatInterface = () => {
               </div>
               <div className="flex gap-2">
                 <button 
+                  onClick={() => setProactiveEnabled(!proactiveEnabled)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    proactiveEnabled 
+                      ? 'bg-green-500/80 hover:bg-green-600/80 text-white' 
+                      : 'bg-gray-500/80 hover:bg-gray-600/80 text-white'
+                  }`}
+                  title={proactiveEnabled ? 'Proactive messaging ON' : 'Proactive messaging OFF'}
+                >
+                  {proactiveEnabled ? '🔔' : '🔕'} Auto
+                </button>
+                <button 
                   onClick={() => {
                     setEditingPersonality(null);
                     setShowCreator(true);
