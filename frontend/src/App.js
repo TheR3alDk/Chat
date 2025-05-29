@@ -866,6 +866,11 @@ const ChatInterface = () => {
     }
   };
 
+  const triggerProactiveMessage = async () => {
+    console.log('Manually triggering proactive message');
+    await sendProactiveMessage();
+  };
+
   const generateOpeningMessage = async (personalityId) => {
     const customPersonality = customPersonalities.find(p => p.id === personalityId);
     
