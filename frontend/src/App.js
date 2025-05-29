@@ -625,11 +625,20 @@ const ChatInterface = () => {
 
       console.log('Proactive message generated:', proactiveMessage.content.substring(0, 50) + '...');
       
-      setMessages(prevMessages => [...prevMessages, proactiveMessage]);
-      setLastMessageTime(proactiveMessage.timestamp);
+      setConversations(prev => ({
+        ...prev,
+        [currentPersonality]: [...(prev[currentPersonality] || []), proactiveMessage]
+      }));
+      
+      const newLastMessageTimes = {
+        ...lastMessageTimes,
+        [currentPersonality]: proactiveMessage.timestamp
+      };
+      setLastMessageTimes(newLastMessageTimes);
+      localStorage.setItem('lastMessageTimes', JSON.stringify(newLastMessageTimes));
       
       // Send notification for proactive message
-      sendMessageNotification(proactiveMessage, proactiveMessage.personality);
+      sendMessageNotification(proactiveMessage.content, proactiveMessage.personality);
 
     } catch (error) {
       console.error('Error sending proactive message:', error);
