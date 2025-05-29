@@ -2070,7 +2070,34 @@ const ChatInterface = () => {
 
   return (
     <>
-      <ChatPage />
+      <ChatPage 
+        conversations={conversations}
+        currentPersonality={currentPersonality}
+        setCurrentPersonality={setCurrentPersonality}
+        currentMessages={conversations[currentPersonality] || []}
+        input={input}
+        setInput={setInput}
+        handleSend={handleSend}
+        handleKeyPress={handleKeyPress}
+        isLoading={isLoading}
+        isGeneratingImage={isGeneratingImage}
+        error={error}
+        getPersonalityDisplay={getPersonalityDisplay}
+        getPersonalityImage={getPersonalityImage}
+        PersonalityAvatar={PersonalityAvatar}
+        isCustomPersonality={isCustomPersonality}
+        customPersonalities={customPersonalities}
+        setEditingPersonality={setEditingPersonality}
+        setShowCreator={setShowCreator}
+        deleteConversation={deleteConversation}
+        deleteMessageAndRevert={deleteMessageAndRevert}
+        toggleNotifications={toggleNotifications}
+        notificationsEnabled={notificationsEnabled}
+        notificationPermission={notificationPermission}
+        proactiveEnabled={proactiveEnabled}
+        setProactiveEnabled={setProactiveEnabled}
+        messagesEndRef={messagesEndRef}
+      />
       {/* Personality Creator Modal */}
       <PersonalityCreator
         isOpen={showCreator}
