@@ -263,6 +263,40 @@ async def chat_completion(
             detail=f"AI service error: {str(e)}"
         )
 
+@api_router.post("/generate_image")
+@limiter.limit("10/minute")
+async def generate_image(
+    request: Request,
+    image_request: ImageGenerationRequest
+):
+    """Generate an image directly from a prompt"""
+    try:
+        generated_image = await generate_image_with_fal(
+            image_request.prompt, 
+            image_request.style
+        )
+        
+        if generated_image:
+            return {
+                "success": True,
+                "image": generated_image,
+                "prompt": image_request.prompt,
+                "style": image_request.style,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to generate image"
+            )
+            
+    except Exception as e:
+        logging.error(f"Direct image generation error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Image generation error: {str(e)}"
+        )
+
 @api_router.get("/personalities")
 async def get_personalities():
     """Get available personality types"""
