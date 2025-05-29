@@ -378,7 +378,7 @@ const ChatInterface = () => {
   const [userId] = useState(() => localStorage.getItem('userId') || `user_${Date.now()}`);
   const [showCreator, setShowCreator] = useState(false);
   const [editingPersonality, setEditingPersonality] = useState(null);
-  const [proactiveEnabled, setProactiveEnabled] = useState(true);
+  const [activeTab, setActiveTab] = useState('chats'); // 'discover', 'chats', 'profile'
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState('default');
   const [lastMessageTimes, setLastMessageTimes] = useState({}); // {personalityId: timestamp}
