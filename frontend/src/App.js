@@ -296,18 +296,20 @@ const ChatInterface = () => {
 
   // Start proactive messaging when personality changes or when enabled
   useEffect(() => {
-    if (proactiveEnabled && personality && lastMessageTime) {
+    if (proactiveEnabled && currentPersonality && lastMessageTimes[currentPersonality]) {
       startProactiveMessaging();
-    } else if (proactiveTimerRef.current) {
-      clearInterval(proactiveTimerRef.current);
+    } else if (proactiveTimersRef.current[currentPersonality]) {
+      clearInterval(proactiveTimersRef.current[currentPersonality]);
+      delete proactiveTimersRef.current[currentPersonality];
     }
     
     return () => {
-      if (proactiveTimerRef.current) {
-        clearInterval(proactiveTimerRef.current);
+      if (proactiveTimersRef.current[currentPersonality]) {
+        clearInterval(proactiveTimersRef.current[currentPersonality]);
+        delete proactiveTimersRef.current[currentPersonality];
       }
     };
-  }, [personality, proactiveEnabled, lastMessageTime, customPersonalities]);
+  }, [currentPersonality, proactiveEnabled, lastMessageTimes, customPersonalities]);
 
   // Save messages and update last message time whenever messages change
   useEffect(() => {
