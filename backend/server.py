@@ -748,16 +748,33 @@ async def create_public_personality(personality: PublicPersonality):
         )
 
 @api_router.get("/personalities/public")
-async def get_public_personalities(limit: int = 50, offset: int = 0, tags: str = None):
-    """Get list of public personalities"""
+async def get_public_personalities(
+    limit: int = 50, 
+    offset: int = 0, 
+    tags: str = None, 
+    gender: str = None,
+    search: str = None
+):
+    """Get list of public personalities with filtering options"""
     try:
         collection = db.public_personalities
         query = {"is_public": True}
+        
+        # Filter by gender if provided
+        if gender and gender in ["male", "female", "non-binary", "other"]:
+            query["gender"] = gender
         
         # Filter by tags if provided
         if tags:
             tag_list = [tag.strip() for tag in tags.split(",")]
             query["tags"] = {"$in": tag_list}
+        
+        # Search in name and description if provided
+        if search:
+            query["$or"] = [
+                {"name": {"$regex": search, "$options": "i"}},
+                {"description": {"$regex": search, "$options": "i"}}
+            ]
         
         # Get personalities with pagination
         cursor = collection.find(query).sort("usage_count", -1).skip(offset).limit(limit)
@@ -770,7 +787,12 @@ async def get_public_personalities(limit: int = 50, offset: int = 0, tags: str =
         
         return {
             "personalities": personalities,
-            "total": await collection.count_documents(query)
+            "total": await collection.count_documents(query),
+            "filters": {
+                "gender": gender,
+                "tags": tags,
+                "search": search
+            }
         }
         
     except Exception as e:
