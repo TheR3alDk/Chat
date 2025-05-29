@@ -451,7 +451,7 @@ const ChatInterface = () => {
     setCustomPersonalities(personalities);
   };
 
-  const handleSavePersonality = (personalityData) => {
+  const handleSavePersonality = async (personalityData) => {
     const existing = customPersonalities.find(p => p.id === personalityData.id);
     let updated;
     
@@ -464,6 +464,28 @@ const ChatInterface = () => {
     }
     
     saveCustomPersonalities(updated);
+
+    // If it's public, also save to backend
+    if (personalityData.isPublic) {
+      try {
+        const publicPersonality = {
+          ...personalityData,
+          creator_id: userId,
+          tags: personalityData.tags ? personalityData.tags.split(',').map(tag => tag.trim()) : []
+        };
+
+        await axios.post(`${API}/personalities/public`, publicPersonality);
+        
+        // Reload public and user personalities
+        await loadPublicPersonalities();
+        await loadUserPersonalities();
+        
+        console.log('Public personality saved successfully');
+      } catch (error) {
+        console.error('Error saving public personality:', error);
+        alert('Error saving public personality. It will remain private.');
+      }
+    }
   };
 
   const handleDeletePersonality = (personalityId) => {
