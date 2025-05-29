@@ -68,6 +68,20 @@ class ChatRequest(BaseModel):
     max_tokens: int = 1000
     temperature: float = 0.7
 
+class PublicPersonality(BaseModel):
+    id: str
+    name: str
+    description: str
+    scenario: str = ""
+    emoji: str = ""
+    customImage: str = None
+    prompt: str
+    creator_id: str
+    is_public: bool = True
+    created_at: str
+    tags: List[str] = []
+    usage_count: int = 0
+
 class ChatResponse(BaseModel):
     response: str
     personality_used: str
