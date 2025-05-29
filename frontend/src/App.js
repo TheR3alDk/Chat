@@ -874,11 +874,12 @@ const ChatInterface = () => {
               <p className="mt-2">✨ <strong>New:</strong> Create your own custom personalities!</p>
               <p className="mt-1">🎨 <strong>Plus:</strong> Ask for images and I'll create them for you!</p>
               <p className="mt-1">💬 <strong>Amazing:</strong> Your chatbots will message you proactively!</p>
+              <p className="mt-1">🔔 <strong>Notifications:</strong> Get notified when they reach out!</p>
               <p className="text-sm mt-3 text-white/40">
                 Try: "Draw me a sunset" or "Create a picture of a cute cat"
               </p>
               <p className="text-sm mt-1 text-white/40">
-                Toggle "🔔 Auto" to enable/disable proactive messaging
+                Click "🔔 Notify" to enable notifications • "🔔 Auto" for proactive messaging
               </p>
             </div>
           )}
