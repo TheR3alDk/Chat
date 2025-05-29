@@ -326,20 +326,22 @@ const DiscoveryPage = () => {
     fetchTags();
   }, []);
 
-  const filteredPersonalities = publicPersonalities.filter(p => {
-    // Search term filter
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          p.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Gender filter
-    const matchesGender = !genderFilter || p.gender === genderFilter;
-    
-    // Tags filter
-    const matchesTags = selectedTagFilters.length === 0 || 
-                        selectedTagFilters.every(tag => p.tags && p.tags.includes(tag));
-    
-    return matchesSearch && matchesGender && matchesTags;
-  });
+  const filteredPersonalities = Array.isArray(publicPersonalities) 
+    ? publicPersonalities.filter(p => {
+        // Search term filter
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            p.description.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        // Gender filter
+        const matchesGender = !genderFilter || p.gender === genderFilter;
+        
+        // Tags filter
+        const matchesTags = selectedTagFilters.length === 0 || 
+                            (p.tags && selectedTagFilters.every(tag => p.tags.includes(tag)));
+        
+        return matchesSearch && matchesGender && matchesTags;
+      })
+    : [];
 
   const handleTagToggle = (tag) => {
     setSelectedTagFilters(prev => 
