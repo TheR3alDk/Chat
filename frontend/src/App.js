@@ -259,7 +259,7 @@ const ChatInterface = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [currentPersonality, conversations]);
 
   // Load data on component mount
   useEffect(() => {
@@ -284,13 +284,13 @@ const ChatInterface = () => {
       requestNotificationPermission();
     }
     
-    const savedMessages = localStorage.getItem('chatMessages');
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
+    const savedConversations = localStorage.getItem('conversations');
+    if (savedConversations) {
+      setConversations(JSON.parse(savedConversations));
     }
-    const savedLastMessageTime = localStorage.getItem('lastMessageTime');
-    if (savedLastMessageTime) {
-      setLastMessageTime(savedLastMessageTime);
+    const savedLastMessageTimes = localStorage.getItem('lastMessageTimes');
+    if (savedLastMessageTimes) {
+      setLastMessageTimes(JSON.parse(savedLastMessageTimes));
     }
   }, []);
 
