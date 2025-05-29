@@ -5,6 +5,139 @@ import './App.css';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Custom Personality Creation Modal
+const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => {
+  const [formData, setFormData] = useState({
+    id: '',
+    name: '',
+    description: '',
+    emoji: '',
+    prompt: ''
+  });
+
+  useEffect(() => {
+    if (editingPersonality) {
+      setFormData(editingPersonality);
+    } else {
+      setFormData({
+        id: '',
+        name: '',
+        description: '',
+        emoji: '',
+        prompt: ''
+      });
+    }
+  }, [editingPersonality, isOpen]);
+
+  const handleSave = () => {
+    if (!formData.name || !formData.prompt) {
+      alert('Please fill in name and prompt fields');
+      return;
+    }
+
+    const personality = {
+      ...formData,
+      id: formData.id || `custom_${Date.now()}`,
+      emoji: formData.emoji || '👤'
+    };
+
+    onSave(personality);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">
+              {editingPersonality ? 'Edit Personality' : 'Create Custom Personality'}
+            </h2>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">
+              ×
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Personality Name *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="e.g., Gaming Buddy, Study Partner"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <input
+                type="text"
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                placeholder="Brief description of this personality"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Emoji (Optional)
+              </label>
+              <input
+                type="text"
+                value={formData.emoji}
+                onChange={(e) => setFormData({...formData, emoji: e.target.value})}
+                placeholder="e.g., 🎮, 📚, 🎨"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                maxLength="2"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Personality Prompt *
+              </label>
+              <textarea
+                value={formData.prompt}
+                onChange={(e) => setFormData({...formData, prompt: e.target.value})}
+                placeholder="Describe how this AI personality should behave, speak, and interact. Be specific about traits, tone, and characteristics..."
+                rows="6"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Tip: Include details about gender, speaking style, interests, and how they should respond to users.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              {editingPersonality ? 'Save Changes' : 'Create Personality'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ChatInterface = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -12,6 +145,9 @@ const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [personalities, setPersonalities] = useState([]);
+  const [customPersonalities, setCustomPersonalities] = useState([]);
+  const [showCreator, setShowCreator] = useState(false);
+  const [editingPersonality, setEditingPersonality] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -22,9 +158,10 @@ const ChatInterface = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Load personalities and messages on component mount
+  // Load data on component mount
   useEffect(() => {
     loadPersonalities();
+    loadCustomPersonalities();
     const savedMessages = localStorage.getItem('chatMessages');
     if (savedMessages) {
       setMessages(JSON.parse(savedMessages));
@@ -47,6 +184,45 @@ const ChatInterface = () => {
     }
   };
 
+  const loadCustomPersonalities = () => {
+    const saved = localStorage.getItem('customPersonalities');
+    if (saved) {
+      setCustomPersonalities(JSON.parse(saved));
+    }
+  };
+
+  const saveCustomPersonalities = (personalities) => {
+    localStorage.setItem('customPersonalities', JSON.stringify(personalities));
+    setCustomPersonalities(personalities);
+  };
+
+  const handleSavePersonality = (personalityData) => {
+    const existing = customPersonalities.find(p => p.id === personalityData.id);
+    let updated;
+    
+    if (existing) {
+      updated = customPersonalities.map(p => 
+        p.id === personalityData.id ? personalityData : p
+      );
+    } else {
+      updated = [...customPersonalities, personalityData];
+    }
+    
+    saveCustomPersonalities(updated);
+  };
+
+  const handleDeletePersonality = (personalityId) => {
+    if (window.confirm('Are you sure you want to delete this personality?')) {
+      const updated = customPersonalities.filter(p => p.id !== personalityId);
+      saveCustomPersonalities(updated);
+      
+      // Switch to default if current personality is deleted
+      if (personality === personalityId) {
+        setPersonality('best_friend');
+      }
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -58,20 +234,24 @@ const ChatInterface = () => {
     setError(null);
 
     try {
-      const response = await axios.post(
-        `${API}/chat`,
-        {
-          messages: newMessages,
-          personality: personality,
-          max_tokens: 1000,
-          temperature: 0.7
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      // Find custom personality prompt if using custom personality
+      const customPersonality = customPersonalities.find(p => p.id === personality);
+      
+      const requestData = {
+        messages: newMessages,
+        personality: personality,
+        max_tokens: 1000,
+        temperature: 0.7
+      };
+
+      // Add custom prompt if it's a custom personality
+      if (customPersonality) {
+        requestData.custom_prompt = customPersonality.prompt;
+      }
+
+      const response = await axios.post(`${API}/chat`, requestData, {
+        headers: { 'Content-Type': 'application/json' }
+      });
 
       const assistantMessage = {
         role: 'assistant',
@@ -103,20 +283,34 @@ const ChatInterface = () => {
     localStorage.removeItem('chatMessages');
   };
 
+  const getAllPersonalities = () => {
+    return [...personalities, ...customPersonalities];
+  };
+
   const getPersonalityDisplay = (personalityId) => {
-    const personality = personalities.find(p => p.id === personalityId);
+    const allPersonalities = getAllPersonalities();
+    const personality = allPersonalities.find(p => p.id === personalityId);
     return personality ? personality.name : personalityId;
   };
 
   const getPersonalityEmoji = (personalityId) => {
-    const emojis = {
+    const customPersonality = customPersonalities.find(p => p.id === personalityId);
+    if (customPersonality) {
+      return customPersonality.emoji || '👤';
+    }
+
+    const builtInEmojis = {
       'lover': '💕',
       'therapist': '🧠',
       'best_friend': '👯‍♀️',
       'fantasy_rpg': '🧚‍♀️',
       'neutral': '👩‍💼'
     };
-    return emojis[personalityId] || '👩‍💼';
+    return builtInEmojis[personalityId] || '👩‍💼';
+  };
+
+  const isCustomPersonality = (personalityId) => {
+    return customPersonalities.some(p => p.id === personalityId);
   };
 
   return (
@@ -131,24 +325,70 @@ const ChatInterface = () => {
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <div className="flex items-center gap-2">
                 <label className="text-white font-medium">Personality:</label>
-                <select 
-                  value={personality} 
-                  onChange={(e) => setPersonality(e.target.value)}
-                  className="bg-white/20 backdrop-blur-md text-white border border-white/30 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  {personalities.map((p) => (
-                    <option key={p.id} value={p.id} className="bg-gray-800">
-                      {getPersonalityEmoji(p.id)} {p.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={personality} 
+                    onChange={(e) => setPersonality(e.target.value)}
+                    className="bg-white/20 backdrop-blur-md text-white border border-white/30 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <optgroup label="Built-in Personalities" className="bg-gray-800">
+                      {personalities.map((p) => (
+                        <option key={p.id} value={p.id} className="bg-gray-800">
+                          {getPersonalityEmoji(p.id)} {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {customPersonalities.length > 0 && (
+                      <optgroup label="Custom Personalities" className="bg-gray-800">
+                        {customPersonalities.map((p) => (
+                          <option key={p.id} value={p.id} className="bg-gray-800">
+                            {p.emoji || '👤'} {p.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                  {isCustomPersonality(personality) && (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => {
+                          const p = customPersonalities.find(p => p.id === personality);
+                          setEditingPersonality(p);
+                          setShowCreator(true);
+                        }}
+                        className="bg-blue-500/80 hover:bg-blue-600/80 text-white p-2 rounded-lg transition-colors"
+                        title="Edit personality"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => handleDeletePersonality(personality)}
+                        className="bg-red-500/80 hover:bg-red-600/80 text-white p-2 rounded-lg transition-colors"
+                        title="Delete personality"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-              <button 
-                onClick={clearChat} 
-                className="bg-red-500/80 hover:bg-red-600/80 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                Clear Chat
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => {
+                    setEditingPersonality(null);
+                    setShowCreator(true);
+                  }}
+                  className="bg-green-500/80 hover:bg-green-600/80 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  ➕ Create
+                </button>
+                <button 
+                  onClick={clearChat} 
+                  className="bg-red-500/80 hover:bg-red-600/80 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Clear Chat
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -159,6 +399,7 @@ const ChatInterface = () => {
             <div className="text-center text-white/60 mt-8">
               <h2 className="text-xl mb-2">Welcome to your Private AI Chatbot! 💬</h2>
               <p>Choose a personality and start chatting. Your conversations are stored locally only.</p>
+              <p className="mt-2">✨ <strong>New:</strong> Create your own custom personalities!</p>
             </div>
           )}
           
@@ -173,6 +414,9 @@ const ChatInterface = () => {
                   <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
                     {getPersonalityEmoji(message.personality || personality)}
                     {getPersonalityDisplay(message.personality || personality)}
+                    {isCustomPersonality(message.personality || personality) && (
+                      <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Custom</span>
+                    )}
                   </div>
                 )}
                 <div className="whitespace-pre-wrap">{message.content}</div>
@@ -227,6 +471,17 @@ const ChatInterface = () => {
           </div>
         </div>
       </div>
+
+      {/* Personality Creator Modal */}
+      <PersonalityCreator
+        isOpen={showCreator}
+        onClose={() => {
+          setShowCreator(false);
+          setEditingPersonality(null);
+        }}
+        onSave={handleSavePersonality}
+        editingPersonality={editingPersonality}
+      />
     </div>
   );
 };
