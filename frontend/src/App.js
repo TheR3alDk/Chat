@@ -766,7 +766,57 @@ const ChatInterface = () => {
     }
   };
 
-  return (
+  const deleteConversation = (personalityId) => {
+    if (window.confirm(`Are you sure you want to delete your entire conversation with ${getPersonalityDisplay(personalityId)}?`)) {
+      const newConversations = { ...conversations };
+      delete newConversations[personalityId];
+      setConversations(newConversations);
+      
+      const newLastMessageTimes = { ...lastMessageTimes };
+      delete newLastMessageTimes[personalityId];
+      setLastMessageTimes(newLastMessageTimes);
+      
+      // Clear proactive timer for this personality
+      if (proactiveTimersRef.current[personalityId]) {
+        clearInterval(proactiveTimersRef.current[personalityId]);
+        delete proactiveTimersRef.current[personalityId];
+      }
+      
+      // If we're currently viewing this conversation, go back to home
+      if (currentPersonality === personalityId) {
+        setCurrentPersonality(null);
+      }
+    }
+  };
+
+  const deleteMessageAndRevert = (personalityId, messageIndex) => {
+    if (window.confirm('Delete this message and revert the conversation to this point?')) {
+      const messages = conversations[personalityId] || [];
+      const newMessages = messages.slice(0, messageIndex);
+      setConversations(prev => ({
+        ...prev,
+        [personalityId]: newMessages
+      }));
+    }
+  };
+
+  const getLastMessage = (personalityId) => {
+    const messages = conversations[personalityId] || [];
+    if (messages.length === 0) return 'No messages yet';
+    const lastMessage = messages[messages.length - 1];
+    const preview = lastMessage.content.length > 50 
+      ? lastMessage.content.substring(0, 50) + '...' 
+      : lastMessage.content;
+    return lastMessage.role === 'user' ? `You: ${preview}` : preview;
+  };
+
+  const getUnreadCount = (personalityId) => {
+    // For now, return 0. In future could track unread messages
+    return 0;
+  };
+
+  // Home Page Component
+  const HomePage = () => (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <div className="container mx-auto max-w-4xl h-screen flex flex-col">
         {/* Header */}
