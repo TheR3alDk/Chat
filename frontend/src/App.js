@@ -33,7 +33,9 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
         emoji: '',
         customImage: null,
         prompt: '',
-        scenario: ''
+        scenario: '',
+        isPublic: false,
+        tags: ''
       });
       setImagePreview(null);
     }
