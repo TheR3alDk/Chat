@@ -72,7 +72,7 @@ class PersonalityAPITester:
             "description": description,
             "scenario": scenario,
             "emoji": "🤖",
-            "customImage": None,
+            "customImage": "",  # Empty string instead of None
             "prompt": f"You are {name}, a {description}. {scenario}",
             "creator_id": self.user_id,
             "is_public": is_public,
