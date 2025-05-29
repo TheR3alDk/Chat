@@ -349,7 +349,7 @@ const ChatInterface = () => {
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { role: 'user', content: input.trim() };
+    const userMessage = { role: 'user', content: input.trim(), timestamp: new Date().toISOString() };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
