@@ -402,7 +402,7 @@ const DiscoveryPage = () => {
         <div className="mt-4">
           <label className="block text-white/80 mb-1 text-sm">Categories</label>
           <div className="flex flex-wrap gap-2">
-            {availableTags.map(tag => (
+            {Array.isArray(availableTags) ? availableTags.map(tag => (
               <button
                 key={tag}
                 onClick={() => handleTagToggle(tag)}
@@ -414,7 +414,7 @@ const DiscoveryPage = () => {
               >
                 {tag}
               </button>
-            ))}
+            )) : null}
           </div>
         </div>
       </div>
