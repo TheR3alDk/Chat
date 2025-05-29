@@ -265,7 +265,25 @@ const ChatInterface = () => {
   useEffect(() => {
     loadPersonalities();
     loadCustomPersonalities();
-    requestNotificationPermission();
+    
+    // Load notification settings
+    const savedNotifications = localStorage.getItem('notificationsEnabled');
+    if (savedNotifications !== null) {
+      setNotificationsEnabled(savedNotifications === 'true');
+    }
+    
+    // Check current notification permission
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    } else {
+      setNotificationPermission('unsupported');
+    }
+    
+    // Request permission if enabled but not granted
+    if (notificationsEnabled && Notification.permission === 'default') {
+      requestNotificationPermission();
+    }
+    
     const savedMessages = localStorage.getItem('chatMessages');
     if (savedMessages) {
       setMessages(JSON.parse(savedMessages));
