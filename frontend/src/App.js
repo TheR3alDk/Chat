@@ -547,40 +547,40 @@ const ChatInterface = () => {
   };
 
   const startProactiveMessaging = () => {
-    if (!proactiveEnabled || !personality || !lastMessageTime) {
-      console.log('Proactive messaging not started:', { proactiveEnabled, personality, lastMessageTime: !!lastMessageTime });
+    if (!proactiveEnabled || !currentPersonality || !lastMessageTimes[currentPersonality]) {
+      console.log('Proactive messaging not started:', { proactiveEnabled, currentPersonality, lastMessageTime: !!lastMessageTimes[currentPersonality] });
       return;
     }
     
-    // Clear any existing timer
-    if (proactiveTimerRef.current) {
-      clearInterval(proactiveTimerRef.current);
+    // Clear any existing timer for this personality
+    if (proactiveTimersRef.current[currentPersonality]) {
+      clearInterval(proactiveTimersRef.current[currentPersonality]);
     }
     
-    console.log('Starting proactive messaging for', personality);
+    console.log('Starting proactive messaging for', currentPersonality);
     
     // Check immediately on start, then every 2 minutes for more responsive behavior
     checkAndSendProactive();
     
-    proactiveTimerRef.current = setInterval(async () => {
+    proactiveTimersRef.current[currentPersonality] = setInterval(async () => {
       checkAndSendProactive();
     }, 2 * 60 * 1000); // Check every 2 minutes
   };
 
   const checkAndSendProactive = async () => {
-    if (!proactiveEnabled || !lastMessageTime || !personality) return;
+    if (!proactiveEnabled || !currentPersonality || !lastMessageTimes[currentPersonality]) return;
     
     try {
-      console.log('Checking proactive timing for', personality, 'last message:', lastMessageTime);
+      console.log('Checking proactive timing for', currentPersonality, 'last message:', lastMessageTimes[currentPersonality]);
       
       const response = await axios.get(
-        `${API}/should_send_proactive/${personality}?last_message_time=${encodeURIComponent(lastMessageTime)}`
+        `${API}/should_send_proactive/${currentPersonality}?last_message_time=${encodeURIComponent(lastMessageTimes[currentPersonality])}`
       );
       
       console.log('Proactive check result:', response.data);
       
       if (response.data.should_send) {
-        console.log('Sending proactive message for', personality);
+        console.log('Sending proactive message for', currentPersonality);
         await sendProactiveMessage();
       }
     } catch (error) {
@@ -589,19 +589,20 @@ const ChatInterface = () => {
   };
 
   const sendProactiveMessage = async () => {
-    if (!proactiveEnabled || !personality) return;
+    if (!proactiveEnabled || !currentPersonality) return;
     
     try {
-      console.log('Generating proactive message for', personality);
+      console.log('Generating proactive message for', currentPersonality);
       
-      const customPersonality = customPersonalities.find(p => p.id === personality);
+      const customPersonality = customPersonalities.find(p => p.id === currentPersonality);
+      const currentMessages = conversations[currentPersonality] || [];
       
       const requestData = {
-        personality: personality,
+        personality: currentPersonality,
         custom_personalities: customPersonalities,
-        conversation_history: messages.slice(-6), // Last 6 messages for context
-        time_since_last_message: lastMessageTime ? 
-          Math.floor((Date.now() - new Date(lastMessageTime).getTime()) / (1000 * 60)) : 0
+        conversation_history: currentMessages.slice(-6), // Last 6 messages for context
+        time_since_last_message: lastMessageTimes[currentPersonality] ? 
+          Math.floor((Date.now() - new Date(lastMessageTimes[currentPersonality]).getTime()) / (1000 * 60)) : 0
       };
 
       if (customPersonality) {
