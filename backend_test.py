@@ -1,34 +1,35 @@
-
 import requests
 import sys
-import time
-import base64
+import json
 from datetime import datetime
 
-class AICompanionTester:
+class APITester:
     def __init__(self, base_url):
         self.base_url = base_url
-        self.api_url = f"{base_url}/api"
         self.tests_run = 0
         self.tests_passed = 0
-        self.custom_personality_id = None
-        self.custom_personality_data = None
+        self.failures = []
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, params=None):
+    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
         """Run a single API test"""
-        url = f"{self.api_url}/{endpoint}"
-        headers = {'Content-Type': 'application/json'}
+        url = f"{self.base_url}/api/{endpoint}"
+        default_headers = {'Content-Type': 'application/json'}
         
+        if headers:
+            default_headers.update(headers)
+            
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
         
         try:
             if method == 'GET':
-                response = requests.get(url, headers=headers, params=params)
+                response = requests.get(url, headers=default_headers)
             elif method == 'POST':
-                response = requests.post(url, json=data, headers=headers)
+                response = requests.post(url, json=data, headers=default_headers)
+            elif method == 'PUT':
+                response = requests.put(url, json=data, headers=default_headers)
             elif method == 'DELETE':
-                response = requests.delete(url, headers=headers)
+                response = requests.delete(url, headers=default_headers)
 
             success = response.status_code == expected_status
             if success:
@@ -39,193 +40,145 @@ class AICompanionTester:
                 except:
                     return success, {}
             else:
-                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
+                error_msg = f"❌ Failed - Expected {expected_status}, got {response.status_code}"
+                print(error_msg)
+                self.failures.append(f"{name}: {error_msg}")
                 try:
-                    print(f"Response: {response.json()}")
-                except:
                     print(f"Response: {response.text}")
-                return False, {}
+                    return False, response.json()
+                except:
+                    return False, {}
 
         except Exception as e:
-            print(f"❌ Failed - Error: {str(e)}")
+            error_msg = f"❌ Failed - Error: {str(e)}"
+            print(error_msg)
+            self.failures.append(f"{name}: {error_msg}")
             return False, {}
 
-    def test_get_personalities(self):
-        """Test getting available personalities"""
-        success, response = self.run_test(
-            "Get Available Personalities",
+    def test_personalities(self):
+        """Test getting personalities"""
+        return self.run_test(
+            "Get Personalities",
             "GET",
             "personalities",
             200
         )
-        
-        if success:
-            personalities = response.get('personalities', [])
-            print(f"Found {len(personalities)} built-in personalities")
-            for p in personalities:
-                print(f"  - {p.get('name')} ({p.get('id')})")
-        
-        return success, response
 
-    def test_get_public_personalities(self):
+    def test_public_personalities(self):
         """Test getting public personalities"""
-        success, response = self.run_test(
+        return self.run_test(
             "Get Public Personalities",
             "GET",
             "personalities/public",
             200
         )
-        
-        if success:
-            personalities = response.get('personalities', [])
-            print(f"Found {len(personalities)} public personalities")
-        
-        return success, response
 
-    def create_custom_personality(self):
-        """Create a custom personality with an image"""
-        # Create a test image (base64 encoded small colored square)
-        image_data = "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFElEQVR42mP8z8BQz0AEYBxVSF+FABJAARPrP+kkAAAAAElFTkSuQmCC"
-        
-        # Create a unique personality ID
-        personality_id = f"test_personality_{int(time.time())}"
-        
-        # Personality data
-        personality_data = {
-            "id": personality_id,
-            "name": "Test Personality with Image",
-            "description": "A test personality with a custom image for background blur testing",
-            "emoji": "🧪",
-            "customImage": f"data:image/png;base64,{image_data}",
-            "prompt": "You are a helpful test assistant for testing the blurry background feature.",
-            "scenario": "You are helping test the blurry background feature in a chat application.",
-            "gender": "non-binary",
-            "isPublic": True,
-            "tags": ["test", "background", "blur"],
-            "creator_id": f"test_user_{int(time.time())}"
-        }
-        
-        self.custom_personality_data = personality_data
-        self.custom_personality_id = personality_id
-        
-        print(f"\n🔍 Creating custom personality with ID: {personality_id}")
-        
-        # Create the personality
-        success, response = self.run_test(
-            "Create Custom Personality",
-            "POST",
-            "personalities/public",
-            200,
-            data=personality_data
+    def test_personality_tags(self):
+        """Test getting personality tags"""
+        return self.run_test(
+            "Get Personality Tags",
+            "GET",
+            "personalities/tags",
+            200
         )
-        
-        if success:
-            print(f"Created personality with ID: {response.get('personality_id')}")
-        
-        return personality_data
 
-    def test_chat_with_personality(self, personality_id, message="Hello, how are you?"):
-        """Test chatting with a personality"""
+    def test_chat(self):
+        """Test chat functionality"""
         data = {
-            "messages": [{"role": "user", "content": message}],
-            "personality": personality_id,
-            "custom_personalities": [self.custom_personality_data] if self.custom_personality_data else [],
-            "is_first_message": True,
-            "max_tokens": 500,
+            "messages": [{"role": "user", "content": "Hello, how are you?"}],
+            "personality": "best_friend",
+            "max_tokens": 100,
             "temperature": 0.7
         }
-        
-        success, response = self.run_test(
-            f"Chat with {personality_id}",
+        return self.run_test(
+            "Chat Completion",
             "POST",
             "chat",
             200,
             data=data
         )
-        
-        if success:
-            print(f"Response from {personality_id}: {response.get('response', '')[:100]}...")
-            if response.get('image'):
-                print(f"Image received: {response.get('image')[:30]}...")
-        
-        return success, response
-    
-    def test_proactive_message(self, personality_id):
-        """Test generating a proactive message"""
+
+    def test_proactive_message(self):
+        """Test proactive message generation"""
         data = {
-            "personality": personality_id,
-            "custom_personalities": [self.custom_personality_data] if self.custom_personality_data else [],
-            "conversation_history": [],
-            "time_since_last_message": 30
+            "personality": "best_friend",
+            "conversation_history": [{"role": "user", "content": "Hello"}],
+            "time_since_last_message": 60
         }
-        
-        success, response = self.run_test(
-            f"Proactive message from {personality_id}",
+        return self.run_test(
+            "Proactive Message",
             "POST",
             "proactive_message",
             200,
             data=data
         )
-        
-        if success:
-            print(f"Proactive message: {response.get('response', '')[:100]}...")
-        
-        return success, response
-    
-    def test_opening_message(self, personality_id):
-        """Test generating an opening message"""
+
+    def test_opening_message(self):
+        """Test opening message generation"""
         data = {
-            "messages": [],
-            "personality": personality_id,
-            "custom_personalities": [self.custom_personality_data] if self.custom_personality_data else [],
-            "is_first_message": True
+            "personality": "best_friend",
+            "max_tokens": 100,
+            "temperature": 0.7
         }
-        
-        success, response = self.run_test(
-            f"Opening message for {personality_id}",
+        return self.run_test(
+            "Opening Message",
             "POST",
             "opening_message",
             200,
             data=data
         )
+
+    def test_should_send_proactive(self):
+        """Test should_send_proactive endpoint"""
+        return self.run_test(
+            "Should Send Proactive",
+            "GET",
+            "should_send_proactive/best_friend?last_message_time=2025-02-01T12:00:00Z",
+            200
+        )
+
+    def run_all_tests(self):
+        """Run all API tests"""
+        print(f"🚀 Starting API tests against {self.base_url}")
         
-        if success:
-            print(f"Opening message: {response.get('response', '')[:100]}...")
+        # Run all tests
+        self.test_personalities()
+        self.test_public_personalities()
+        self.test_personality_tags()
+        self.test_chat()
+        self.test_proactive_message()
+        self.test_opening_message()
+        self.test_should_send_proactive()
         
-        return success, response
+        # Print summary
+        print("\n📊 Test Summary:")
+        print(f"Tests run: {self.tests_run}")
+        print(f"Tests passed: {self.tests_passed}")
+        print(f"Tests failed: {self.tests_run - self.tests_passed}")
+        
+        if self.failures:
+            print("\n❌ Failures:")
+            for failure in self.failures:
+                print(f"  - {failure}")
+        
+        return self.tests_passed == self.tests_run
 
 def main():
-    # Get the backend URL from environment or use default
-    backend_url = "https://0e14580d-f2ad-4ec3-b289-ebef5440154e.preview.emergentagent.com"
+    # Get the backend URL from the frontend .env file
+    try:
+        with open('/app/frontend/.env', 'r') as f:
+            for line in f:
+                if line.startswith('REACT_APP_BACKEND_URL='):
+                    backend_url = line.strip().split('=')[1]
+                    break
+    except Exception as e:
+        print(f"Error reading .env file: {e}")
+        backend_url = "https://0e14580d-f2ad-4ec3-b289-ebef5440154e.preview.emergentagent.com"
     
-    # Setup tester
-    tester = AICompanionTester(backend_url)
+    tester = APITester(backend_url)
+    success = tester.run_all_tests()
     
-    # Test API endpoints
-    print("\n===== Testing API Endpoints =====")
-    
-    # Test getting personalities
-    tester.test_get_personalities()
-    
-    # Test getting public personalities
-    tester.test_get_public_personalities()
-    
-    # Create and test custom personality
-    custom_personality = tester.create_custom_personality()
-    
-    # Test chat with built-in personality
-    tester.test_chat_with_personality("best_friend", "Hello! Can you tell me about the chat interface?")
-    
-    # Test proactive message
-    tester.test_proactive_message("best_friend")
-    
-    # Test opening message
-    if tester.custom_personality_id:
-        tester.test_opening_message(tester.custom_personality_id)
-    
-    # Print results
-    print(f"\n📊 Tests passed: {tester.tests_passed}/{tester.tests_run}")
-    return 0 if tester.tests_passed == tester.tests_run else 1
+    return 0 if success else 1
 
 if __name__ == "__main__":
     sys.exit(main())
