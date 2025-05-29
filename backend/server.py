@@ -493,6 +493,83 @@ async def chat_completion(
             detail=f"AI service error: {str(e)}"
         )
 
+@api_router.post("/opening_message")
+@limiter.limit("10/minute")
+async def generate_opening_message(
+    request: Request,
+    chat_request: ChatRequest
+):
+    """Generate an opening message for custom personalities with scenarios"""
+    try:
+        # Use custom prompt if provided, otherwise use built-in personality
+        if chat_request.custom_prompt:
+            base_system_prompt = chat_request.custom_prompt
+        else:
+            base_system_prompt = PERSONALITY_PROMPTS.get(
+                chat_request.personality, 
+                PERSONALITY_PROMPTS["neutral"]
+            )
+        
+        # Generate opening message prompt
+        opening_prompt = generate_opening_message_prompt(
+            chat_request.personality,
+            chat_request.custom_personalities,
+            base_system_prompt
+        )
+        
+        if not opening_prompt:
+            raise HTTPException(
+                status_code=400,
+                detail="No scenario found for this personality"
+            )
+        
+        # Prepare messages for SambaNova API
+        messages = [{"role": "system", "content": opening_prompt}]
+        
+        # Call SambaNova API
+        response = samba_client.chat.completions.create(
+            model="Meta-Llama-3.1-8B-Instruct",
+            messages=messages,
+            max_tokens=300,
+            temperature=0.8,
+            stream=False
+        )
+        
+        response_text = response.choices[0].message.content
+        
+        # Check if AI wants to generate an image with the opening message
+        image_prompt = extract_image_from_response(response_text)
+        generated_image = None
+        
+        if image_prompt:
+            style_mapping = {
+                "fantasy_rpg": "artistic",
+                "best_friend": "cartoon",
+                "lover": "artistic",
+                "therapist": "realistic",
+                "neutral": "realistic"
+            }
+            style = style_mapping.get(chat_request.personality, "realistic")
+            generated_image = await generate_image_with_fal(image_prompt, style)
+        
+        # Clean the response text of image markers
+        clean_text = clean_response_text(response_text)
+        
+        return ChatResponse(
+            response=clean_text,
+            personality_used=chat_request.personality,
+            timestamp=datetime.utcnow().isoformat(),
+            image=generated_image,
+            image_prompt=image_prompt
+        )
+        
+    except Exception as e:
+        logging.error(f"Opening message generation error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Opening message error: {str(e)}"
+        )
+
 @api_router.post("/proactive_message")
 @limiter.limit("30/minute")
 async def generate_proactive_message(
