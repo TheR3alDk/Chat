@@ -1764,7 +1764,7 @@ const ChatInterface = () => {
           />
         )}
         
-        <div className="container mx-auto max-w-4xl h-screen flex flex-col relative z-10">
+        <div className="container mx-auto max-w-4xl h-screen flex flex-col relative" style={{ zIndex: 10 }}>
           {/* Header */}
           <div className="bg-white/10 backdrop-blur-md border-b border-white/20 p-4">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
