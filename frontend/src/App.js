@@ -466,6 +466,10 @@ const ChatInterface = () => {
     return <span className="text-lg">{emoji}</span>;
   };
 
+  const isCustomPersonality = (personalityId) => {
+    return customPersonalities.some(p => p.id === personalityId);
+  };
+
   const startProactiveMessaging = () => {
     if (!proactiveEnabled) return;
     
