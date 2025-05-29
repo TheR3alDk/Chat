@@ -425,6 +425,102 @@ async def chat_completion(
             detail=f"AI service error: {str(e)}"
         )
 
+@api_router.post("/proactive_message")
+@limiter.limit("30/minute")
+async def generate_proactive_message(
+    request: Request,
+    proactive_request: ProactiveMessageRequest
+):
+    """Generate a proactive message from the chatbot"""
+    try:
+        # Use custom prompt if provided, otherwise use built-in personality
+        if proactive_request.custom_prompt:
+            base_personality_prompt = proactive_request.custom_prompt
+        else:
+            base_personality_prompt = PERSONALITY_PROMPTS.get(
+                proactive_request.personality, 
+                PERSONALITY_PROMPTS["neutral"]
+            )
+        
+        # Generate proactive message prompt
+        proactive_prompt = generate_proactive_message_prompt(
+            proactive_request.personality,
+            proactive_request.conversation_history,
+            proactive_request.time_since_last_message,
+            proactive_request.custom_personalities
+        )
+        
+        # Combine personality with proactive prompt
+        system_prompt = f"{base_personality_prompt}\n\nProactive Message Task: {proactive_prompt}"
+        
+        # Prepare messages for SambaNova API
+        messages = [{"role": "system", "content": system_prompt}]
+        
+        # Call SambaNova API
+        response = samba_client.chat.completions.create(
+            model="Meta-Llama-3.1-8B-Instruct",
+            messages=messages,
+            max_tokens=300,  # Shorter for proactive messages
+            temperature=0.8,  # Slightly more creative
+            stream=False
+        )
+        
+        response_text = response.choices[0].message.content
+        
+        # Check if AI wants to generate an image with the proactive message
+        image_prompt = extract_image_from_response(response_text)
+        generated_image = None
+        
+        if image_prompt:
+            # Determine style based on personality
+            style_mapping = {
+                "fantasy_rpg": "artistic",
+                "best_friend": "cartoon",
+                "lover": "artistic",
+                "therapist": "realistic",
+                "neutral": "realistic"
+            }
+            style = style_mapping.get(proactive_request.personality, "realistic")
+            generated_image = await generate_image_with_fal(image_prompt, style)
+        
+        # Clean the response text of image markers
+        clean_text = clean_response_text(response_text)
+        
+        return ChatResponse(
+            response=clean_text,
+            personality_used=proactive_request.personality,
+            timestamp=datetime.utcnow().isoformat(),
+            image=generated_image,
+            image_prompt=image_prompt
+        )
+        
+    except Exception as e:
+        logging.error(f"Proactive message generation error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Proactive message error: {str(e)}"
+        )
+
+@api_router.get("/should_send_proactive/{personality}")
+async def check_proactive_timing(
+    personality: str,
+    last_message_time: str = None
+):
+    """Check if it's time to send a proactive message"""
+    try:
+        should_send = await should_send_proactive_message(last_message_time, personality)
+        return {
+            "should_send": should_send,
+            "personality": personality,
+            "check_time": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logging.error(f"Proactive timing check error: {str(e)}")
+        return {
+            "should_send": False,
+            "error": str(e)
+        }
+
 @api_router.post("/generate_image")
 @limiter.limit("10/minute")
 async def generate_image(
