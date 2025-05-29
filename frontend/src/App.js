@@ -28,7 +28,10 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
 
   useEffect(() => {
     if (editingPersonality) {
-      setFormData(editingPersonality);
+      setFormData({
+        ...editingPersonality,
+        tags: editingPersonality.tags || []
+      });
       setImagePreview(editingPersonality.customImage || null);
     } else {
       setFormData({
@@ -39,12 +42,32 @@ const PersonalityCreator = ({ isOpen, onClose, onSave, editingPersonality }) => 
         customImage: null,
         prompt: '',
         scenario: '',
+        gender: 'female',
         isPublic: false,
-        tags: ''
+        tags: []
       });
       setImagePreview(null);
     }
+    
+    // Load available categories
+    loadCategories();
   }, [editingPersonality, isOpen]);
+
+  const loadCategories = async () => {
+    try {
+      const response = await axios.get(`${API}/personalities/tags`);
+      setAvailableCategories(response.data.categories || []);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  };
+
+  const handleTagToggle = (tag) => {
+    const newTags = formData.tags.includes(tag)
+      ? formData.tags.filter(t => t !== tag)
+      : [...formData.tags, tag];
+    setFormData({...formData, tags: newTags});
+  };
 
   const compressImage = (file, maxWidth = 100, quality = 0.8) => {
     return new Promise((resolve) => {
