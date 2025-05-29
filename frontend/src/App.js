@@ -382,22 +382,26 @@ const ChatInterface = () => {
   };
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !currentPersonality) return;
 
     const userMessage = { role: 'user', content: input.trim(), timestamp: new Date().toISOString() };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    const currentMessages = conversations[currentPersonality] || [];
+    const newMessages = [...currentMessages, userMessage];
+    setConversations(prev => ({
+      ...prev,
+      [currentPersonality]: newMessages
+    }));
     setInput('');
     setIsLoading(true);
     setError(null);
 
     try {
       // Find custom personality prompt if using custom personality
-      const customPersonality = customPersonalities.find(p => p.id === personality);
+      const customPersonality = customPersonalities.find(p => p.id === currentPersonality);
       
       const requestData = {
         messages: newMessages,
-        personality: personality,
+        personality: currentPersonality,
         custom_personalities: customPersonalities, // Pass custom personalities for self-image generation
         max_tokens: 1000,
         temperature: 0.7
