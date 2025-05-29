@@ -540,6 +540,10 @@ const ChatInterface = () => {
               <h2 className="text-xl mb-2">Welcome to your Private AI Chatbot! 💬</h2>
               <p>Choose a personality and start chatting. Your conversations are stored locally only.</p>
               <p className="mt-2">✨ <strong>New:</strong> Create your own custom personalities!</p>
+              <p className="mt-1">🎨 <strong>Plus:</strong> Ask for images and I'll create them for you!</p>
+              <p className="text-sm mt-3 text-white/40">
+                Try: "Draw me a sunset" or "Create a picture of a cute cat"
+              </p>
             </div>
           )}
           
