@@ -335,8 +335,15 @@ const ChatInterface = () => {
 
   // Load data on component mount
   useEffect(() => {
+    // Set up user ID in localStorage
+    if (!localStorage.getItem('userId')) {
+      localStorage.setItem('userId', userId);
+    }
+    
     loadPersonalities();
     loadCustomPersonalities();
+    loadPublicPersonalities();
+    loadUserPersonalities();
     
     // Load notification settings
     const savedNotifications = localStorage.getItem('notificationsEnabled');
@@ -356,9 +363,9 @@ const ChatInterface = () => {
       requestNotificationPermission();
     }
     
-    const savedConversations = localStorage.getItem('conversations');
-    if (savedConversations) {
-      setConversations(JSON.parse(savedConversations));
+    const savedMessages = localStorage.getItem('chatMessages');
+    if (savedMessages) {
+      setConversations(JSON.parse(savedMessages));
     }
     const savedLastMessageTimes = localStorage.getItem('lastMessageTimes');
     if (savedLastMessageTimes) {
