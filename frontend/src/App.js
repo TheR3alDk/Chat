@@ -895,7 +895,7 @@ const ChatInterface = () => {
 
         {/* Messages Container */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.length === 0 && (
+          {(!currentPersonality || !conversations[currentPersonality] || conversations[currentPersonality].length === 0) && (
             <div className="text-center text-white/60 mt-8">
               <h2 className="text-xl mb-2">Welcome to your Private AI Chatbot! 💬</h2>
               <p>Choose a personality and start chatting. Your conversations are stored locally only.</p>
@@ -912,7 +912,7 @@ const ChatInterface = () => {
             </div>
           )}
           
-          {messages.map((message, index) => (
+          {currentPersonality && conversations[currentPersonality]?.map((message, index) => (
             <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-xs sm:max-w-md lg:max-w-lg xl:max-w-xl rounded-2xl p-4 ${
                 message.role === 'user' 
@@ -921,10 +921,10 @@ const ChatInterface = () => {
               }`}>
                 {message.role === 'assistant' && (
                   <div className="text-xs text-gray-500 mb-1 flex items-center gap-2">
-                    <PersonalityAvatar personalityId={message.personality || personality} size="small" />
+                    <PersonalityAvatar personalityId={message.personality || currentPersonality} size="small" />
                     <div className="flex items-center gap-1">
-                      {getPersonalityDisplay(message.personality || personality)}
-                      {isCustomPersonality(message.personality || personality) && (
+                      {getPersonalityDisplay(message.personality || currentPersonality)}
+                      {isCustomPersonality(message.personality || currentPersonality) && (
                         <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Custom</span>
                       )}
                       {message.isProactive && (
