@@ -550,6 +550,21 @@ const ChatInterface = () => {
                   </div>
                 )}
                 <div className="whitespace-pre-wrap">{message.content}</div>
+                {message.image && (
+                  <div className="mt-3">
+                    <img 
+                      src={`data:image/jpeg;base64,${message.image}`}
+                      alt={message.imagePrompt || "Generated image"}
+                      className="max-w-full h-auto rounded-lg border border-gray-200"
+                      loading="lazy"
+                    />
+                    {message.imagePrompt && (
+                      <p className="text-xs text-gray-500 mt-1 italic">
+                        🎨 Generated: {message.imagePrompt}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}
