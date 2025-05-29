@@ -177,6 +177,67 @@ class PrivateAIChatbotTester:
         
         return False, response
     
+    def test_self_image_generation(self, personality, request_phrase):
+        """Test self-image generation through the chat endpoint"""
+        print(f"\n🤳 Testing Self-Image Generation with {personality} personality")
+        print(f"Request: '{request_phrase}'")
+        
+        success, response = self.test_chat_endpoint(personality, request_phrase)
+        
+        if success:
+            if response.get('image'):
+                print(f"✅ Self-image generation successful!")
+                print(f"Image Prompt: '{response.get('image_prompt')}'")
+                return True, response
+            else:
+                print(f"❌ No self-image was generated for the request")
+                return False, response
+        
+        return False, response
+
+    def test_custom_personality_self_image(self, custom_prompt, custom_name, request_phrase):
+        """Test self-image generation with a custom personality"""
+        print(f"\n🤳 Testing Self-Image Generation with custom personality: {custom_name}")
+        print(f"Request: '{request_phrase}'")
+        
+        data = {
+            "messages": [{"role": "user", "content": request_phrase}],
+            "personality": "custom_test",
+            "custom_prompt": custom_prompt,
+            "custom_personalities": [
+                {
+                    "id": "custom_test",
+                    "name": custom_name,
+                    "prompt": custom_prompt
+                }
+            ],
+            "max_tokens": 1000,
+            "temperature": 0.7
+        }
+        
+        success, response = self.run_test(
+            f"Self-Image with custom personality: {custom_name}",
+            "POST",
+            "chat",
+            200,
+            data=data
+        )
+        
+        if success:
+            print(f"Custom Prompt: '{custom_prompt[:50]}...'")
+            print(f"Message: '{request_phrase}'")
+            print(f"Response: '{response.get('response')[:100]}...'")
+            
+            if response.get('image'):
+                print(f"✅ Self-image generation successful!")
+                print(f"Image Prompt: '{response.get('image_prompt')}'")
+                return True, response
+            else:
+                print(f"❌ No self-image was generated for the request")
+                return False, response
+        
+        return False, response
+    
     def save_image(self, base64_image, filename):
         """Save a base64 encoded image to a file"""
         try:
