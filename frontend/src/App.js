@@ -1734,10 +1734,27 @@ const ChatInterface = () => {
   // Individual Chat Page Component
   const ChatPage = () => {
     const currentMessages = conversations[currentPersonality] || [];
+    const currentPersonalityImage = getPersonalityImage(currentPersonality);
     
     return (
-      <div className="min-h-screen bg-black">
-        <div className="container mx-auto max-w-4xl h-screen flex flex-col">
+      <div 
+        className="min-h-screen bg-black relative"
+        style={{
+          backgroundImage: currentPersonalityImage ? `url(${currentPersonalityImage})` : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        {/* Blur overlay */}
+        {currentPersonalityImage && (
+          <div 
+            className="absolute inset-0 backdrop-blur-3xl bg-black/60"
+            style={{ backdropFilter: 'blur(20px)' }}
+          />
+        )}
+        
+        <div className="container mx-auto max-w-4xl h-screen flex flex-col relative z-10">
           {/* Header */}
           <div className="bg-white/10 backdrop-blur-md border-b border-white/20 p-4">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
