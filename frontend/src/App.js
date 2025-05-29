@@ -815,6 +815,266 @@ const ChatInterface = () => {
     return 0;
   };
 
+  // Home Page Component
+  const HomePage = () => (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      <div className="container mx-auto max-w-4xl h-screen flex flex-col">
+        {/* Header */}
+        <div className="bg-white/10 backdrop-blur-md border-b border-white/20 p-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+              🤖 Private AI Chatbot
+            </h1>
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="flex items-center gap-2">
+                <label className="text-white font-medium">Personality:</label>
+                <div className="flex items-center gap-2">
+                  <PersonalityAvatar personalityId={currentPersonality} size="medium" />
+                  <select 
+                    value={currentPersonality || ''} 
+                    onChange={(e) => setCurrentPersonality(e.target.value)}
+                    className="bg-white/20 backdrop-blur-md text-white border border-white/30 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="">Select a personality</option>
+                    <optgroup label="Built-in Personalities" className="bg-gray-800">
+                      {personalities.map((p) => (
+                        <option key={p.id} value={p.id} className="bg-gray-800">
+                          {getPersonalityEmoji(p.id)} {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {customPersonalities.length > 0 && (
+                      <optgroup label="Custom Personalities" className="bg-gray-800">
+                        {customPersonalities.map((p) => (
+                          <option key={p.id} value={p.id} className="bg-gray-800">
+                            {p.customImage ? '🖼️' : (p.emoji || '👤')} {p.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                  {isCustomPersonality(currentPersonality) && (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => {
+                          const p = customPersonalities.find(p => p.id === currentPersonality);
+                          setEditingPersonality(p);
+                          setShowCreator(true);
+                        }}
+                        className="bg-blue-500/80 hover:bg-blue-600/80 text-white p-2 rounded-lg transition-colors"
+                        title="Edit personality"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => handleDeletePersonality(currentPersonality)}
+                        className="bg-red-500/80 hover:bg-red-600/80 text-white p-2 rounded-lg transition-colors"
+                        title="Delete personality"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={toggleNotifications}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    notificationsEnabled && notificationPermission === 'granted'
+                      ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white' 
+                      : notificationsEnabled && notificationPermission === 'default'
+                      ? 'bg-yellow-500/80 hover:bg-yellow-600/80 text-white'
+                      : 'bg-gray-500/80 hover:bg-gray-600/80 text-white'
+                  }`}
+                  title={
+                    notificationPermission === 'granted' && notificationsEnabled
+                      ? 'Notifications ON - Click to disable'
+                      : notificationPermission === 'denied'
+                      ? 'Notifications blocked by browser'
+                      : notificationPermission === 'default'
+                      ? 'Click to enable notifications'
+                      : 'Notifications OFF - Click to enable'
+                  }
+                >
+                  {notificationPermission === 'granted' && notificationsEnabled
+                    ? '🔔' 
+                    : notificationPermission === 'denied'
+                    ? '🚫'
+                    : '🔕'
+                  } Notify
+                </button>
+                <button 
+                  onClick={() => setProactiveEnabled(!proactiveEnabled)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    proactiveEnabled 
+                      ? 'bg-green-500/80 hover:bg-green-600/80 text-white' 
+                      : 'bg-gray-500/80 hover:bg-gray-600/80 text-white'
+                  }`}
+                  title={proactiveEnabled ? 'Proactive messaging ON' : 'Proactive messaging OFF'}
+                >
+                  {proactiveEnabled ? '🔔' : '🔕'} Auto
+                </button>
+                {proactiveEnabled && (
+                  <button 
+                    onClick={triggerProactiveMessage}
+                    className="bg-purple-500/80 hover:bg-purple-600/80 text-white px-4 py-2 rounded-lg transition-colors"
+                    title="Trigger proactive message now (for testing)"
+                  >
+                    💬 Test
+                  </button>
+                )}
+                <button 
+                  onClick={() => {
+                    setEditingPersonality(null);
+                    setShowCreator(true);
+                  }}
+                  className="bg-green-500/80 hover:bg-green-600/80 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  ➕ Create
+                </button>
+                <button 
+                  onClick={clearChat} 
+                  className="bg-red-500/80 hover:bg-red-600/80 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Clear Chat
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Messages Container */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {(!currentPersonality || !conversations[currentPersonality] || conversations[currentPersonality].length === 0) && (
+            <div className="text-center text-white/60 mt-8">
+              <h2 className="text-xl mb-2">Welcome to your Private AI Chatbot! 💬</h2>
+              <p>Choose a personality and start chatting. Your conversations are stored locally only.</p>
+              <p className="mt-2">✨ <strong>New:</strong> Create your own custom personalities!</p>
+              <p className="mt-1">🎨 <strong>Plus:</strong> Ask for images and I'll create them for you!</p>
+              <p className="mt-1">💬 <strong>Amazing:</strong> Your chatbots will message you proactively!</p>
+              <p className="mt-1">🔔 <strong>Notifications:</strong> Get notified when they reach out!</p>
+              <p className="text-sm mt-3 text-white/40">
+                Try: "Draw me a sunset" or "Create a picture of a cute cat"
+              </p>
+              <p className="text-sm mt-1 text-white/40">
+                Click "🔔 Notify" to enable notifications • "🔔 Auto" for proactive messaging
+              </p>
+            </div>
+          )}
+          
+          {currentPersonality && conversations[currentPersonality]?.map((message, index) => (
+            <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-xs sm:max-w-md lg:max-w-lg xl:max-w-xl rounded-2xl p-4 ${
+                message.role === 'user' 
+                  ? 'bg-blue-500 text-white ml-12' 
+                  : 'bg-white/90 text-gray-800 mr-12'
+              }`}>
+                {message.role === 'assistant' && (
+                  <div className="text-xs text-gray-500 mb-1 flex items-center gap-2">
+                    <PersonalityAvatar personalityId={message.personality || currentPersonality} size="small" />
+                    <div className="flex items-center gap-1">
+                      {getPersonalityDisplay(message.personality || currentPersonality)}
+                      {isCustomPersonality(message.personality || currentPersonality) && (
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Custom</span>
+                      )}
+                      {message.isProactive && (
+                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">💬 Proactive</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div className="whitespace-pre-wrap">{message.content}</div>
+                {message.image && (
+                  <div className="mt-3">
+                    <img 
+                      src={`data:image/jpeg;base64,${message.image}`}
+                      alt={message.imagePrompt || "Generated image"}
+                      className="max-w-full h-auto rounded-lg border border-gray-200"
+                      loading="lazy"
+                      onLoad={() => console.log('Image loaded successfully')}
+                      onError={(e) => console.log('Image load error:', e)}
+                    />
+                    {message.imagePrompt && (
+                      <p className="text-xs text-gray-500 mt-1 italic">
+                        🎨 Generated: {message.imagePrompt}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {/* Debug display */}
+                {message.image && (
+                  <div className="text-xs text-gray-400 mt-1">
+                    🐛 Debug: Image data length: {message.image.length}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+          
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-white/90 text-gray-800 rounded-2xl p-4 mr-12">
+                <div className="flex items-center gap-2">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {isGeneratingImage ? 'Creating your image... 🎨' : 'Thinking...'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mx-4 mb-2 bg-red-500/20 border border-red-500/30 text-red-200 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        {/* Input Container */}
+        <div className="bg-white/10 backdrop-blur-md border-t border-white/20 p-4">
+          <div className="flex gap-3">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your message..."
+              disabled={isLoading}
+              rows="2"
+              className="flex-1 bg-white/20 backdrop-blur-md text-white placeholder-white/60 border border-white/30 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+            />
+            <button 
+              onClick={handleSend} 
+              disabled={isLoading || !input.trim()}
+              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg transition-colors flex items-center gap-2"
+            >
+              {isLoading ? '⏳' : '📤'} Send
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Personality Creator Modal */}
+      <PersonalityCreator
+        isOpen={showCreator}
+        onClose={() => {
+          setShowCreator(false);
+          setEditingPersonality(null);
+        }}
+        onSave={handleSavePersonality}
+        editingPersonality={editingPersonality}
+      />
+    </div>
+  );
+
   // Individual Chat Page Component
   const ChatPage = () => {
     const currentMessages = conversations[currentPersonality] || [];
