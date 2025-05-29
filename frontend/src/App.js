@@ -608,8 +608,118 @@ const ChatInterface = () => {
   };
 
   const requestNotificationPermission = async () => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      await Notification.requestPermission();
+    if ('Notification' in window) {
+      try {
+        const permission = await Notification.requestPermission();
+        setNotificationPermission(permission);
+        
+        if (permission === 'granted') {
+          // Show a welcome notification
+          showNotification(
+            'Notifications Enabled! 🔔',
+            'You\'ll now receive notifications when your AI companions message you.',
+            '🤖'
+          );
+        }
+        
+        return permission;
+      } catch (error) {
+        console.error('Error requesting notification permission:', error);
+        setNotificationPermission('denied');
+        return 'denied';
+      }
+    } else {
+      console.log('Notifications not supported in this browser');
+      setNotificationPermission('unsupported');
+      return 'unsupported';
+    }
+  };
+
+  const showNotification = (title, body, icon = '🤖', tag = null) => {
+    if (!notificationsEnabled || notificationPermission !== 'granted') {
+      return;
+    }
+
+    // Don't show notifications if the page is visible and focused
+    if (!document.hidden && document.hasFocus && document.hasFocus()) {
+      return;
+    }
+
+    try {
+      const notification = new Notification(title, {
+        body: body,
+        icon: icon === '🤖' ? '/favicon.ico' : icon,
+        badge: '/favicon.ico',
+        tag: tag || 'ai-companion-message',
+        requireInteraction: false,
+        silent: false,
+        vibrate: [200, 100, 200],
+        data: {
+          timestamp: Date.now(),
+          personality: personality
+        }
+      });
+
+      // Auto-close notification after 5 seconds
+      setTimeout(() => {
+        notification.close();
+      }, 5000);
+
+      // Focus window when notification is clicked
+      notification.onclick = function() {
+        window.focus();
+        this.close();
+      };
+
+    } catch (error) {
+      console.error('Error showing notification:', error);
+    }
+  };
+
+  const sendMessageNotification = (message, personalityId) => {
+    if (!notificationsEnabled || notificationPermission !== 'granted') {
+      return;
+    }
+
+    const personalityDisplay = getPersonalityDisplay(personalityId);
+    const emoji = getPersonalityEmoji(personalityId);
+    
+    // Truncate long messages for notification
+    const truncatedMessage = message.length > 100 
+      ? message.substring(0, 100) + '...' 
+      : message;
+
+    const title = message.isProactive 
+      ? `${emoji} ${personalityDisplay} reached out to you!`
+      : `${emoji} ${personalityDisplay} replied`;
+
+    showNotification(
+      title,
+      truncatedMessage,
+      emoji,
+      `message-${personalityId}-${Date.now()}`
+    );
+  };
+
+  const toggleNotifications = async () => {
+    if (!notificationsEnabled && notificationPermission !== 'granted') {
+      const permission = await requestNotificationPermission();
+      if (permission === 'granted') {
+        setNotificationsEnabled(true);
+        localStorage.setItem('notificationsEnabled', 'true');
+      }
+    } else {
+      const newState = !notificationsEnabled;
+      setNotificationsEnabled(newState);
+      localStorage.setItem('notificationsEnabled', newState.toString());
+      
+      if (newState && notificationPermission === 'granted') {
+        showNotification(
+          'Notifications Re-enabled! 🔔',
+          'You\'ll receive notifications for new messages.',
+          '✅'
+        );
+      }
     }
   };
 
