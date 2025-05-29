@@ -63,6 +63,7 @@ class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     personality: str = "neutral"
     custom_prompt: str = None  # For custom personalities
+    custom_personalities: List[Dict] = []  # Pass custom personalities for self-image generation
     max_tokens: int = 1000
     temperature: float = 0.7
 
