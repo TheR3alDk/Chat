@@ -1908,7 +1908,7 @@ const ChatInterface = () => {
   if (currentPersonality === null) {
     return (
       <>
-        <HomePage />
+        <TabNavigationHomePage />
         {/* Personality Creator Modal */}
         <PersonalityCreator
           isOpen={showCreator}
