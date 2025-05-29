@@ -1317,7 +1317,6 @@ const ChatInterface = () => {
     </>
   );
 };
-};
 
 function App() {
   return (
