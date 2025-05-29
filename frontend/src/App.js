@@ -1457,7 +1457,7 @@ const ChatInterface = () => {
 
   // Tab Navigation Component - Now optimized for bottom mobile navigation
   const TabNavigation = () => (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur-md border-t border-white/20 p-2 md:relative md:bg-white/10 md:border md:border-white/20 md:rounded-2xl md:mb-6 md:bottom-auto">
+    <div className="md:relative md:bg-white/10 md:border md:border-white/20 md:rounded-2xl md:mb-6 md:bottom-auto fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur-md border-t border-white/20 p-2 z-50">
       <div className="flex gap-2">
         <button
           onClick={() => setActiveTab('discover')}
