@@ -70,6 +70,12 @@ class ChatResponse(BaseModel):
     response: str
     personality_used: str
     timestamp: str
+    image: Optional[str] = None  # Base64 encoded image
+    image_prompt: Optional[str] = None  # Prompt used for image generation
+
+class ImageGenerationRequest(BaseModel):
+    prompt: str
+    style: str = "realistic"  # realistic, anime, cartoon, artistic
 
 # Personality system prompts
 PERSONALITY_PROMPTS = {
