@@ -974,7 +974,87 @@ const ChatInterface = () => {
     await sendProactiveMessage();
   };
 
-  const getLastMessage = (personalityId) => {
+  // Enhanced Card Component
+  const PersonalityCard = ({ personality, isPublic = false, onEdit, onDelete, onChat }) => (
+    <div className="group">
+      <div 
+        onClick={() => onChat(personality.id)}
+        className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 cursor-pointer hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl relative"
+      >
+        {isPublic && (
+          <div className="absolute top-4 right-4 flex gap-2">
+            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">🌍 Public</span>
+            {personality.creator_id === userId && (
+              <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Your Creation</span>
+            )}
+          </div>
+        )}
+        {!isPublic && isCustomPersonality(personality.id) && (
+          <div className="absolute top-4 right-4">
+            <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">🔒 Private</span>
+          </div>
+        )}
+        
+        <div className="flex items-start gap-4 mb-4">
+          <PersonalityAvatar personalityId={personality.id} size="large" />
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-bold text-white truncate">{personality.name}</h3>
+            <p className="text-white/80 text-sm mb-2">{personality.description}</p>
+            {personality.scenario && (
+              <p className="text-white/60 text-xs italic truncate">
+                📍 {personality.scenario.substring(0, 80)}...
+              </p>
+            )}
+            {isPublic && personality.tags && personality.tags.length > 0 && (
+              <div className="flex gap-1 mt-2 flex-wrap">
+                {personality.tags.slice(0, 3).map((tag, idx) => (
+                  <span key={idx} className="text-xs bg-blue-500/20 text-blue-200 px-2 py-1 rounded">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {(onEdit || onDelete) && (
+            <div className="opacity-0 group-hover:opacity-100 flex flex-col gap-1 transition-all">
+              {onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(personality);
+                  }}
+                  className="bg-blue-500/80 hover:bg-blue-600/80 text-white p-2 rounded-lg transition-colors"
+                  title="Edit personality"
+                >
+                  ✏️
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(personality.id);
+                  }}
+                  className="bg-red-500/80 hover:bg-red-600/80 text-white p-2 rounded-lg transition-colors"
+                  title="Delete"
+                >
+                  🗑️
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <div className="text-white/70 text-sm">
+          <p className="truncate">{getLastMessage(personality.id)}</p>
+          <p className="text-xs text-white/50 mt-1">
+            {lastMessageTimes[personality.id] ? new Date(lastMessageTimes[personality.id]).toLocaleDateString() : 'Never'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
     const messages = conversations[personalityId] || [];
     if (messages.length === 0) return 'No messages yet';
     const lastMessage = messages[messages.length - 1];
