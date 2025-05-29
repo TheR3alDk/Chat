@@ -378,6 +378,7 @@ const ChatInterface = () => {
       console.error('Chat error:', err);
     } finally {
       setIsLoading(false);
+      setIsGeneratingImage(false);
     }
   };
 
