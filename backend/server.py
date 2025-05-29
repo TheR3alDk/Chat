@@ -1,7 +1,9 @@
 import os
 import logging
+import re
+import base64
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import datetime
 
 from fastapi import FastAPI, APIRouter, HTTPException, Request
@@ -13,9 +15,13 @@ from openai import OpenAI
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+import fal_client
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Set FAL API key
+os.environ["FAL_KEY"] = os.getenv("FAL_KEY")
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
