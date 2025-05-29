@@ -1419,7 +1419,18 @@ const ChatInterface = () => {
                 key={personality.id}
                 personality={personality}
                 isPublic={true}
-                onChat={(personalityId) => setCurrentPersonality(personalityId)}
+                onChat={(personalityId) => {
+                  // Add public personality to custom personalities temporarily for chat if needed
+                  const existingPersonality = customPersonalities.find(p => p.id === personalityId);
+                  if (!existingPersonality) {
+                    const personalityToAdd = userPersonalities.find(p => p.id === personalityId);
+                    if (personalityToAdd) {
+                      const updatedCustomPersonalities = [...customPersonalities, personalityToAdd];
+                      setCustomPersonalities(updatedCustomPersonalities);
+                    }
+                  }
+                  setCurrentPersonality(personalityId);
+                }}
               />
             ))}
           </div>
