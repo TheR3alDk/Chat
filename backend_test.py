@@ -50,6 +50,38 @@ class AICompanionTester:
             print(f"❌ Failed - Error: {str(e)}")
             return False, {}
 
+    def test_get_personalities(self):
+        """Test getting available personalities"""
+        success, response = self.run_test(
+            "Get Available Personalities",
+            "GET",
+            "personalities",
+            200
+        )
+        
+        if success:
+            personalities = response.get('personalities', [])
+            print(f"Found {len(personalities)} built-in personalities")
+            for p in personalities:
+                print(f"  - {p.get('name')} ({p.get('id')})")
+        
+        return success, response
+
+    def test_get_public_personalities(self):
+        """Test getting public personalities"""
+        success, response = self.run_test(
+            "Get Public Personalities",
+            "GET",
+            "personalities/public",
+            200
+        )
+        
+        if success:
+            personalities = response.get('personalities', [])
+            print(f"Found {len(personalities)} public personalities")
+        
+        return success, response
+
     def create_custom_personality(self):
         """Create a custom personality with an image"""
         # Create a test image (base64 encoded small colored square)
@@ -69,13 +101,27 @@ class AICompanionTester:
             "scenario": "You are helping test the blurry background feature in a chat application.",
             "gender": "non-binary",
             "isPublic": True,
-            "tags": ["test", "background", "blur"]
+            "tags": ["test", "background", "blur"],
+            "creator_id": f"test_user_{int(time.time())}"
         }
         
         self.custom_personality_data = personality_data
         self.custom_personality_id = personality_id
         
         print(f"\n🔍 Creating custom personality with ID: {personality_id}")
+        
+        # Create the personality
+        success, response = self.run_test(
+            "Create Custom Personality",
+            "POST",
+            "personalities/public",
+            200,
+            data=personality_data
+        )
+        
+        if success:
+            print(f"Created personality with ID: {response.get('personality_id')}")
+        
         return personality_data
 
     def test_chat_with_personality(self, personality_id, message="Hello, how are you?"):
@@ -99,6 +145,52 @@ class AICompanionTester:
         
         if success:
             print(f"Response from {personality_id}: {response.get('response', '')[:100]}...")
+            if response.get('image'):
+                print(f"Image received: {response.get('image')[:30]}...")
+        
+        return success, response
+    
+    def test_proactive_message(self, personality_id):
+        """Test generating a proactive message"""
+        data = {
+            "personality": personality_id,
+            "custom_personalities": [self.custom_personality_data] if self.custom_personality_data else [],
+            "conversation_history": [],
+            "time_since_last_message": 30
+        }
+        
+        success, response = self.run_test(
+            f"Proactive message from {personality_id}",
+            "POST",
+            "proactive_message",
+            200,
+            data=data
+        )
+        
+        if success:
+            print(f"Proactive message: {response.get('response', '')[:100]}...")
+        
+        return success, response
+    
+    def test_opening_message(self, personality_id):
+        """Test generating an opening message"""
+        data = {
+            "messages": [],
+            "personality": personality_id,
+            "custom_personalities": [self.custom_personality_data] if self.custom_personality_data else [],
+            "is_first_message": True
+        }
+        
+        success, response = self.run_test(
+            f"Opening message for {personality_id}",
+            "POST",
+            "opening_message",
+            200,
+            data=data
+        )
+        
+        if success:
+            print(f"Opening message: {response.get('response', '')[:100]}...")
         
         return success, response
 
@@ -109,17 +201,27 @@ def main():
     # Setup tester
     tester = AICompanionTester(backend_url)
     
-    # Test built-in personalities
-    print("\n===== Testing Built-in Personalities (should use solid black background) =====")
-    built_in_personalities = ["lover", "therapist", "best_friend", "fantasy_rpg", "neutral"]
+    # Test API endpoints
+    print("\n===== Testing API Endpoints =====")
     
-    for personality in built_in_personalities:
-        tester.test_chat_with_personality(personality)
+    # Test getting personalities
+    tester.test_get_personalities()
     
-    # Create and test custom personality with image
-    print("\n===== Testing Custom Personality with Image (should use blurred background) =====")
+    # Test getting public personalities
+    tester.test_get_public_personalities()
+    
+    # Create and test custom personality
     custom_personality = tester.create_custom_personality()
-    tester.test_chat_with_personality(tester.custom_personality_id)
+    
+    # Test chat with built-in personality
+    tester.test_chat_with_personality("best_friend", "Hello! Can you tell me about the chat interface?")
+    
+    # Test proactive message
+    tester.test_proactive_message("best_friend")
+    
+    # Test opening message
+    if tester.custom_personality_id:
+        tester.test_opening_message(tester.custom_personality_id)
     
     # Print results
     print(f"\n📊 Tests passed: {tester.tests_passed}/{tester.tests_run}")
