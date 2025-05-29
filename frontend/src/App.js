@@ -417,10 +417,14 @@ const ChatInterface = () => {
       // Find custom personality prompt if using custom personality
       const customPersonality = customPersonalities.find(p => p.id === currentPersonality);
       
+      const currentMessages = conversations[currentPersonality] || [];
+      const isFirstMessage = currentMessages.length === 0;
+      
       const requestData = {
         messages: newMessages,
         personality: currentPersonality,
         custom_personalities: customPersonalities, // Pass custom personalities for self-image generation
+        is_first_message: isFirstMessage,
         max_tokens: 1000,
         temperature: 0.7
       };
