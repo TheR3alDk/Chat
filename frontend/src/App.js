@@ -1307,6 +1307,13 @@ const ChatInterface = () => {
               personality={personality}
               isPublic={true}
               onChat={async (personalityId) => {
+                // Add public personality to custom personalities temporarily for chat
+                const existingPersonality = customPersonalities.find(p => p.id === personalityId);
+                if (!existingPersonality) {
+                  const updatedCustomPersonalities = [...customPersonalities, personality];
+                  setCustomPersonalities(updatedCustomPersonalities);
+                }
+                
                 setCurrentPersonality(personalityId);
                 // Generate opening message for public personalities if they have scenarios
                 const currentMessages = conversations[personalityId] || [];
